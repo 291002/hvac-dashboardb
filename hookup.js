@@ -4,7 +4,7 @@
   const TRK=3.517, CP=4.186, G=0.0981; // kW per TR, kJ/kg·K, bar per m head
   const sq=v=>v*v;
   const bar=v=>`${f2(Math.max(0,v))} bar`, dc=v=>`${f1(v)} °C`, ls=v=>`${f0(Math.max(0,v))} l/s`;
-  const CHWS='var(--chw)', CHWR='#2c6f99', CWS='#c9a15a', CWR='var(--cw)', AIR='#6f8c80';
+  const CHWS='var(--chw)', CHWR='var(--chwr)', CWS='var(--cws)', CWR='var(--cw)', AIR='var(--air)';
   const INST={pt:1,tt:1,ft:1,dpt:1,lt:1,fq:1,mt:1,at:1};
   const CX0=440, CX1=560;
 
@@ -46,8 +46,8 @@
             {k:'ft',tag:T('FT',2,1),name:'Chilled water flow',val:d=>ls(d.e.flow)},{k:'mov',tag:T('MOV',2,1),open:d=>d.on},{k:'hv',tag:T('HV',2,2)}]}
       ],
       center:()=>{const m=310; return `<rect class="hk-box" x="${CX0}" y="158" width="120" height="304" rx="6"/>
-        <rect x="${CX0}" y="178" width="120" height="44" style="fill:color-mix(in srgb,var(--cw) 18%,#13231e);stroke:var(--cw)"/><text class="hk-shell" x="500" y="216" text-anchor="middle">CONDENSER</text>
-        <rect x="${CX0}" y="398" width="120" height="44" style="fill:color-mix(in srgb,var(--chw) 18%,#13231e);stroke:var(--chw)"/><text class="hk-shell" x="500" y="436" text-anchor="middle">EVAPORATOR</text>
+        <rect x="${CX0}" y="178" width="120" height="44" style="fill:color-mix(in srgb,var(--cw) 18%,var(--box));stroke:var(--cw)"/><text class="hk-shell" x="500" y="216" text-anchor="middle">CONDENSER</text>
+        <rect x="${CX0}" y="398" width="120" height="44" style="fill:color-mix(in srgb,var(--chw) 18%,var(--box));stroke:var(--chw)"/><text class="hk-shell" x="500" y="436" text-anchor="middle">EVAPORATOR</text>
         <text class="hk-title" x="500" y="252" text-anchor="middle">${id}</text>
         <g transform="translate(500,${m})"><circle r="19" class="hk-box"/><g data-rot="${id}"><path d="M0,-13L4,0L0,13L-4,0ZM-13,0L0,4L13,0L0,-4Z" fill="var(--muted)"/></g></g><text class="hk-sub" x="500" y="${m+34}" text-anchor="middle">Compressor</text>
         <text id="hk-c1" class="hk-sub hk-strong" x="500" y="${m+54}" text-anchor="middle">—</text><text id="hk-c2" class="hk-sub" x="500" y="${m+70}" text-anchor="middle">—</text>`},
@@ -90,7 +90,7 @@
       rows:[
         {y:205,dir:-1,cin:CWR,from:`From CH-0${n} condenser`,
           inlet:[{k:'hv',tag:T('HV',1,1)},{k:'mov',tag:T('MOV',1,1),open:d=>d.ton},{k:'tt',tag:T('TT',1,1),name:'Hot water in',val:d=>dc(d.tin)},{k:'pt',tag:T('PT',1,1),name:'Distribution header pressure',val:d=>bar(d.pin)}]},
-        {y:440,dir:1,cin:'#7fb7c9',cout:CWS,from:'Makeup water (city)',to:`To CWP-0${n} suction`,
+        {y:440,dir:1,cin:'var(--mkup)',cout:CWS,from:'Makeup water (city)',to:`To CWP-0${n} suction`,
           inlet:[{k:'hv',tag:T('HV',2,1)},{k:'fq',tag:T('FQ',2,1),name:'Makeup water flow',val:d=>`${f1(d.makeup)} m³/h`},{k:'mov',tag:T('LV',2,1),open:d=>d.makeup>0},{k:'lt',tag:T('LT',2,1),name:'Basin level',val:d=>`${f0(d.level)} %`}],
           outlet:[{k:'tt',tag:T('TT',2,1),name:'Basin water out',val:d=>dc(d.tout)},{k:'hv',tag:T('HV',2,2)},{k:'str',tag:T('STR',2,1)},{k:'dpt',tag:T('DPT',2,1),name:'Basin strainer ΔP',val:d=>bar(d.str)}]}
       ],
@@ -99,7 +99,7 @@
         <path class="hk-box" d="M${CX0},150H${CX1}L${CX1+10},415H${CX0-10}Z"/>
         ${[0,1,2,3,4,5].map(k=>`<path d="M${CX0+6},${250+k*22}L${CX1-6},${236+k*22}" stroke="var(--line-2)" stroke-width="1.5"/>`).join('')}
         ${[0,1,2,3,4].map(k=>`<path d="M${458+k*21},212l-5,9h10z" fill="var(--chw)" opacity=".8"/>`).join('')}
-        <rect x="${CX0-14}" y="415" width="148" height="52" rx="3" style="fill:color-mix(in srgb,var(--chw) 22%,#13231e);stroke:var(--line-2)"/>
+        <rect x="${CX0-14}" y="415" width="148" height="52" rx="3" style="fill:color-mix(in srgb,var(--chw) 22%,var(--box));stroke:var(--line-2)"/>
         <text class="hk-title" x="500" y="188" text-anchor="middle">${id}</text><text class="hk-shell" x="500" y="404" text-anchor="middle">FILL</text><text class="hk-shell" x="500" y="460" text-anchor="middle">BASIN</text>
         <text class="hk-sub" x="600" y="104">Fan VFD</text><text id="hk-c1" class="hk-sub hk-strong" x="600" y="122">—</text><text id="hk-c2" class="hk-sub" x="600" y="138">—</text>`,
       texts:d=>[['hk-c1',d.ton?`${f0(d.ct.fan)}% · ${f1(d.ct.fan/2)} Hz · ${f1(d.ct.kW)} kW`:d.ct.fault?'Tripped':'Off'],['hk-c2',d.ton?`Vibration ${f1(d.vib)} mm/s · approach ${f1(d.p.approach)} K`:'—']],
@@ -120,7 +120,7 @@
           outlet:[{k:'tt',tag:T('TT',2,2),name:'Secondary supply temp',val:d=>dc(d.e.secS),alarm:d=>d.e.fault},{k:'pt',tag:T('PT',2,2),name:'Secondary supply pressure',val:d=>bar(d.sIn-d.sHx)},{k:'hv',tag:T('HV',2,2)}]}
       ],
       center:()=>`<rect class="hk-box" x="${CX0+10}" y="160" width="100" height="300" rx="4"/>${Array.from({length:9},(_,k)=>`<line x1="${462+k*9.5}" x2="${462+k*9.5}" y1="176" y2="444" stroke="var(--line-2)" stroke-width="3"/>`).join('')}
-        <rect x="462" y="292" width="76" height="40" rx="3" class="hk-box"/><text class="hk-title" x="500" y="318" text-anchor="middle">PHE</text><text id="hk-c1" class="hk-sub hk-strong" x="500" y="354" text-anchor="middle" style="paint-order:stroke;stroke:#13231e;stroke-width:4px">—</text>`,
+        <rect x="462" y="292" width="76" height="40" rx="3" class="hk-box"/><text class="hk-title" x="500" y="318" text-anchor="middle">PHE</text><text id="hk-c1" class="hk-sub hk-strong" x="500" y="354" text-anchor="middle" style="paint-order:stroke;stroke:var(--box);stroke-width:4px">—</text>`,
       texts:d=>[['hk-c1',d.e.fault?'Fouled':`${f0(t.load)} TR`]],
       speed:d=>({hk0:flowSpeed(d.v),hk1:flowSpeed(d.v)})};
   }
@@ -140,7 +140,7 @@
           outlet:[{k:'tt',tag:T('TT',2,2),name:'Supply air temp',val:d=>dc(d.a.sat)},{k:'mt',tag:T('MT',2,1),name:'Supply humidity',val:d=>d.on?`${f0(d.a.rh)} %RH`:'—'},{k:'at',tag:T('AT',2,1),name:'CO₂',val:d=>`${f0(d.a.co2)} ppm`},{k:'ft',tag:T('FT',2,1),name:'Airflow',val:d=>`${f1(d.airflow)} m³/s`}]}
       ],
       center:()=>`<rect class="hk-box" x="${CX0-10}" y="150" width="140" height="320" rx="4"/>
-        <rect x="${CX0}" y="178" width="120" height="44" style="fill:color-mix(in srgb,var(--chw) 18%,#13231e);stroke:var(--chw)"/>${[0,1,2,3,4,5,6,7].map(k=>`<line x1="${446+k*15}" y1="180" x2="${456+k*15}" y2="220" stroke="var(--chw)" opacity=".5"/>`).join('')}<text class="hk-shell" x="500" y="240" text-anchor="middle">CHW COIL</text>
+        <rect x="${CX0}" y="178" width="120" height="44" style="fill:color-mix(in srgb,var(--chw) 18%,var(--box));stroke:var(--chw)"/>${[0,1,2,3,4,5,6,7].map(k=>`<line x1="${446+k*15}" y1="180" x2="${456+k*15}" y2="220" stroke="var(--chw)" opacity=".5"/>`).join('')}<text class="hk-shell" x="500" y="240" text-anchor="middle">CHW COIL</text>
         <text class="hk-title" x="500" y="282" text-anchor="middle">${a.id}</text><text id="hk-c1" class="hk-sub hk-strong" x="500" y="302" text-anchor="middle">—</text>
         ${[0,1,2,3,4].map(k=>`<path d="M${CX0+6+k*6},398l4,-10l4,10" fill="none" stroke="var(--muted)"/>`).join('')}<text class="hk-shell" x="${CX0+24}" y="450" text-anchor="middle">FILTER</text>
         <g transform="translate(528,420)"><circle r="20" class="hk-box"/><g data-rot="${a.id}">${[0,90,180,270].map(r=>`<path d="M0,0C5,-5 5,-13 0,-17C-3,-12 -3,-5 0,0Z" fill="var(--muted)" transform="rotate(${r})"/>`).join('')}</g></g><text class="hk-shell" x="528" y="456" text-anchor="middle">FAN</text>`,

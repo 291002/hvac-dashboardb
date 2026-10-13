@@ -25,10 +25,10 @@
 
   // ---------- SVG helpers
   const G=(id,inner)=>`<g class="eq" data-eq="${id}" tabindex="0" role="button" aria-label="Inspect ${id}">${inner}</g>`;
-  const fan=(id,x,y,r=20)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#0c1814" stroke="var(--line-2)"/><g transform="translate(${x},${y})"><g data-rot="${id}">${[0,90,180,270].map(k=>`<path d="M0,0C${r*.3},-${r*.3} ${r*.3},-${r*.8} 0,-${r*.92}C-${r*.2},-${r*.7} -${r*.15},-${r*.3} 0,0Z" fill="var(--muted)" transform="rotate(${k})"/>`).join('')}</g></g>`;
+  const fan=(id,x,y,r=20)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="var(--box-2)" stroke="var(--line-2)"/><g transform="translate(${x},${y})"><g data-rot="${id}">${[0,90,180,270].map(k=>`<path d="M0,0C${r*.3},-${r*.3} ${r*.3},-${r*.8} 0,-${r*.92}C-${r*.2},-${r*.7} -${r*.15},-${r*.3} 0,0Z" fill="var(--muted)" transform="rotate(${k})"/>`).join('')}</g></g>`;
   const pump=(id,x,y,lab)=>G(id,`<circle class="box" cx="${x}" cy="${y}" r="15"/><g transform="translate(${x},${y})"><g data-rot="${id}"><path d="M0,-9L3,0L0,9L-3,0ZM-9,0L0,3L9,0L0,-3Z" fill="var(--muted)"/></g></g><circle id="q-d-${id}" cx="${x+11}" cy="${y-11}" r="4" fill="var(--off)"/>${lab(x,y+29,id)}`);
   const pipe=(d,color,k)=>`<path class="pipe" d="${d}" stroke="${color}"/><path class="flow" data-flow="${k}" d="${d}"/>`;
-  const CHWS='var(--chw)',CHWR='#2c6f99',CWS='#c9a15a',CWR='var(--cw)';
+  const CHWS='var(--chw)',CHWR='var(--chwr)',CWS='var(--cws)',CWR='var(--cw)';
 
   // Bay layout follows the CUC drawings: one future bay, then 9 bays of cooling tower + CWP + chiller + CHWP.
   function plantSVG(p){
@@ -184,7 +184,7 @@
       UI.hookSpeed={};
       $('#schemH').innerHTML=`<span class="label">Live schematic — click any equipment to open its hookup</span>`;
       $('#schemFit').innerHTML=isP?plantSVG(a):towerSVG(a);
-      $('#schemLegend').innerHTML=`<span style="--c:var(--chw)"><i></i>Chilled water supply</span><span style="--c:#2c6f99"><i></i>Chilled water return</span>${isP?'<span style="--c:#c9a15a"><i></i>Condenser water to chillers</span><span style="--c:var(--cw)"><i></i>Condenser water to towers</span>':'<span style="--c:var(--line-2)"><i></i>Supply air duct</span>'}`;
+      $('#schemLegend').innerHTML=`<span style="--c:var(--chw)"><i></i>Chilled water supply</span><span style="--c:var(--chwr)"><i></i>Chilled water return</span>${isP?'<span style="--c:var(--cws)"><i></i>Condenser water to chillers</span><span style="--c:var(--cw)"><i></i>Condenser water to towers</span>':'<span style="--c:var(--line-2)"><i></i>Supply air duct</span>'}`;
       bindEq('#schemFit .eq',eq=>{UI.selEq=eq;UI.hookMode=!!UI.hook.spec(UI.selected,eq);renderSchem();buildInspector();});
     }
     document.querySelectorAll('#detail .eq').forEach(g=>g.classList.toggle('sel',g.dataset.eq===UI.selEq));

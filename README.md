@@ -16,6 +16,7 @@ All values are simulated; nothing is connected to a real BMS.
 | `detail.js` | Building / CUC KPI screen, schematics, simulation controls |
 | `hookup.js` | Equipment hookup drawings (valves, strainers, pumps, PT/TT/FT sensors) |
 | `analytics.js` | Performance — CUC plant vs published benchmarks + all towers with comfort / CO₂ / ΔT checks (merged Analytics + Benchmarks) |
+| `reports.js` | Extract report — overall site report and/or any towers, period (today → 30 days or custom), sections; print / save as PDF or download Excel (CSV) |
 
 ## To edit later
 Ask Claude to edit the **"Center Utility Complex"** HVAC dashboard (this folder).

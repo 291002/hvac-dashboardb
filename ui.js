@@ -67,7 +67,7 @@
   document.addEventListener('pointerdown',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.button===0) open('CUC',r.dataset.eq);});
   document.addEventListener('click',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.detail===0) open('CUC',r.dataset.eq);});
 
-  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); });
+  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); if(e.target.closest('#openReports')) setView('reports'); });
 
   function buildMap(){
     const stage=$('#stage');
@@ -120,8 +120,9 @@
 
   function setView(v){
     const from=UI.view; UI.view=v;
-    [['#mapView','map'],['#detail','detail'],['#analytics','analytics']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
+    [['#mapView','map'],['#detail','detail'],['#analytics','analytics'],['#reports','reports']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
     if(v==='analytics') UI.renderAnalytics();
+    if(v==='reports') UI.renderReports();
     if(v==='map'){
       UI.hover=null; renderPop(); renderSite(); renderSide();
       if(from==='detail'){const pin=document.querySelector(`.hot[data-id="${UI.selected}"]`); if(pin) pin.focus({preventScroll:true}); UI.hover=null; renderPop();}
