@@ -173,7 +173,7 @@
     const T=S.towers;
     $('#reports').innerHTML=`
       <div class="an-head"><button class="btn back" id="rpBack">← Site map</button>
-        <div class="dname"><span class="label">Choose what to include, then print or download</span><h2>Extract report</h2></div></div>
+        <div class="dname"><span class="label">Choose what to include, then print or download</span><h2>Reports</h2></div></div>
       <div class="rp">
         <aside class="rp-side">
           <section><div class="rp-sh"><span class="label">Report scope</span></div>
@@ -186,7 +186,7 @@
             <div class="rp-dates" id="rpDates"><label>From <input type="date" id="rpFrom"></label><label>To <input type="date" id="rpTo"></label></div></section>
           <section><div class="rp-sh"><span class="label">Sections</span></div>
             ${PARTS.map(([k,l])=>`<label class="rp-ck"><input type="checkbox" data-part="${k}" checked> <span>${l}</span></label>`).join('')}</section>
-          <div class="rp-act"><button class="btn pri" id="rpPrint">Print / Save as PDF</button><button class="btn" id="rpCsv">Download Excel (CSV)</button></div>
+          <div class="rp-act"><button class="btn pri" id="rpPrint">Save as PDF</button><button class="btn" id="rpCsv">Download Excel (CSV)</button></div>
           <p class="rp-msg" id="rpMsg" role="status"></p>
         </aside>
         <div class="rp-prev" id="rpPrev" aria-label="Report preview"></div>
@@ -212,7 +212,7 @@
       if(p){st.period=p.dataset.p; render();}
     });
     $('#rpBack').addEventListener('click',()=>UI.setView('map'));
-    $('#rpPrint').addEventListener('click',print);
+    $('#rpPrint').addEventListener('click',()=>{ if(last) UI.savePdf($('#rpPrev').innerHTML,fileStem(),$('#rpPrint'),print); });
     $('#rpCsv').addEventListener('click',csv);
     built=true;
   }

@@ -39,6 +39,7 @@
   // on/off state for the sidebar: running, standby (off), locked out, tripped
   function unitState(u){
     if(u.fault) return ['var(--crit)','Tripped'];
+    if(u.maint) return ['var(--warn)','Maint.'];
     if(!u.enabled) return ['var(--warn)','Locked out'];
     return u.running?['var(--ok)','On']:['var(--off)','Off'];
   }
@@ -58,7 +59,7 @@
     // narrow 4-up tiles: a running pump shows only its speed; the green edge already says it is on
     $('#spList').innerHTML=p.dp.map(c=>{const [col,lab]=unitState(c); return `<button class="eqrow" style="--c:${col}" data-eq="${c.id}"><b>${c.id}</b><span class="st">${c.running?`${f0(c.hz)} Hz`:lab}</span></button>`}).join('');
     $('#chList').innerHTML=p.chillers.map(c=>{const [col,lab]=unitState(c);
-      const m=c.running?`${f0(c.pct)}% · ${f2(c.kwtr)} kW/TR`:c.fault?'Low evap pressure':!c.enabled?'Operator lockout':'Standby · ready';
+      const m=c.running?`${f0(c.pct)}% · ${f2(c.kwtr)} kW/TR`:c.fault?'Low evap pressure':c.maint?'Planned maintenance':!c.enabled?'Operator lockout':'Standby · ready';
       return `<button class="eqrow" style="--c:${col}" data-eq="${c.id}"><b>${c.id}</b><span class="m">${m}</span><span class="st">${lab}</span></button>`}).join('');
     $('#ctList').innerHTML=p.towers.map(c=>{const [col,lab]=unitState(c);
       return `<button class="eqrow" style="--c:${col}" data-eq="${c.id}"><b>${c.id}</b><span class="st">${lab}${c.running?` <span class="m" style="text-transform:none;letter-spacing:0">${f0(c.fan)}%</span>`:''}</span></button>`}).join('');
@@ -67,7 +68,7 @@
   document.addEventListener('pointerdown',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.button===0) open('CUC',r.dataset.eq);});
   document.addEventListener('click',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.detail===0) open('CUC',r.dataset.eq);});
 
-  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); if(e.target.closest('#openReports')) setView('reports'); });
+  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); if(e.target.closest('#openReports')) setView('reports'); if(e.target.closest('#openMaint')) setView('maint'); });
 
   function buildMap(){
     const stage=$('#stage');
@@ -120,9 +121,10 @@
 
   function setView(v){
     const from=UI.view; UI.view=v;
-    [['#mapView','map'],['#detail','detail'],['#analytics','analytics'],['#reports','reports']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
+    [['#mapView','map'],['#detail','detail'],['#analytics','analytics'],['#reports','reports'],['#maint','maint']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
     if(v==='analytics') UI.renderAnalytics();
     if(v==='reports') UI.renderReports();
+    if(v==='maint') UI.renderMaint();
     if(v==='map'){
       UI.hover=null; renderPop(); renderSite(); renderSide();
       if(from==='detail'){const pin=document.querySelector(`.hot[data-id="${UI.selected}"]`); if(pin) pin.focus({preventScroll:true}); UI.hover=null; renderPop();}
@@ -160,4 +162,36 @@
     window.addEventListener('resize',()=>UI.hover&&renderPop());
   };
   UI.reduce=reduce;
+
+  // Save as PDF: builds the A4 file in the browser (html2pdf, loaded on first use) and downloads it straight away.
+  // html = one or more .rp-page articles; each article starts a new page. Offline it falls back to the print dialog.
+  let h2p=null;
+  const loadH2P=()=>window.html2pdf?Promise.resolve():h2p||(h2p=new Promise((ok,no)=>{
+    const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload=ok; s.onerror=()=>{h2p=null; no(new Error('html2pdf failed to load'));}; document.head.appendChild(s);}));
+  UI.savePdf=async function(html,name,btn,fallback){
+    if(btn.disabled) return;
+    const label=btn.textContent; btn.disabled=true; btn.textContent='Saving…';
+    const box=document.createElement('div'); box.className='pdf-src';
+    // html2pdf clones what it is given, so the off-screen position stays on the outer box and the styles key off .pdf-doc
+    box.innerHTML='<div class="pdf-doc">'+html.replace(/<\/article>\s*(?=<article)/g,'</article><div class="html2pdf__page-break"></div>')+'</div>';
+    document.body.appendChild(box);
+    // html2canvas draws an SVG as a standalone image: give it a fixed size and inline the stylesheet colours
+    box.querySelectorAll('svg').forEach(svg=>{
+      const r=svg.getBoundingClientRect(); svg.setAttribute('width',r.width); svg.setAttribute('height',r.height);
+      svg.querySelectorAll('*').forEach(el=>{const cs=getComputedStyle(el);
+        ['fill','stroke','stroke-width','stroke-dasharray','font-family','font-size','font-weight'].forEach(p=>el.style.setProperty(p,cs.getPropertyValue(p)));});
+    });
+    let ok=true;
+    try{
+      await loadH2P();
+      await html2pdf().set({margin:[8,8,10,8],filename:name+'.pdf',image:{type:'jpeg',quality:0.95},
+        html2canvas:{scale:2,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+        pagebreak:{mode:['css','legacy'],avoid:['tr','.rp-k','.rp-hd','.rp-chart']}}).from(box.firstElementChild).save();
+    }catch(e){ ok=false; }
+    box.remove();
+    if(!ok){ btn.textContent=label; btn.disabled=false; fallback(); return; }
+    btn.textContent='Saved ✓';
+    setTimeout(()=>{btn.textContent=label; btn.disabled=false;},2000);
+  };
 })();

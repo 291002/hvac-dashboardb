@@ -8,6 +8,7 @@
     if(!e) return ['off','—'];
     if(e.kind==='tower') return [e.status,{ok:'Comfort OK',warn:'Drifting',crit:'Out of band'}[e.status]];
     if(e.fault) return ['crit',e.id==='ETS-1'?'Fouled':'Tripped'];
+    if(e.maint) return ['warn','Maintenance'];
     if(e.enabled===false) return ['warn','Locked out'];
     if(e.id==='ETS-1') return ['ok','In service'];
     return e.running?['ok','Running']:['off','Standby'];

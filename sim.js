@@ -5,30 +5,30 @@
   const walk=(o,k,s=0.02,lim=0.08)=>{o[k]=clamp((o[k]||0)+(Math.random()-.5)*s,-lim,lim);return o[k]};
 
   const TOWERS=[
-    // Positions are % of the site image (hvac-site.png). Pins printed on the image need no drawn pin; C-series are drawn (drawPin).
-    {id:'ICON',name:'Iconic Tower',use:'Mixed-use · 77 floors · 394 m',design:5200,ahus:6,x:5.6,y:34.3},
-    {id:'C01',name:'Tower C01',use:'Office · 35 floors · 174 m',design:900,ahus:4,x:14.2,y:24.2,drawPin:true},
-    {id:'C02',name:'Tower C02',use:'Office · 15 floors · 66 m',design:380,ahus:2,x:25.3,y:25.1,drawPin:true},
-    {id:'C03',name:'Tower C03',use:'Office · 15 floors · 66 m',design:380,ahus:2,x:53.1,y:43.0,drawPin:true},
-    {id:'C04',name:'Tower C04',use:'Office · 34 floors · 170 m',design:880,ahus:4,x:69.9,y:33.2,drawPin:true},
-    {id:'C05',name:'Tower C05',use:'Office · 18 floors · 79 m',design:450,ahus:3,x:28.3,y:61.8,drawPin:true},
-    {id:'C06',name:'Tower C06',use:'Office · 18 floors · 79 m',design:450,ahus:3,x:71.2,y:68.1,drawPin:true},
-    {id:'C07',name:'Tower C07',use:'Office · 32 floors · 141 m',design:800,ahus:4,x:38.0,y:25.1,drawPin:true},
-    {id:'C08',name:'Tower C08',use:'Office · 32 floors · 141 m',design:800,ahus:4,x:60.8,y:53.8,drawPin:true},
-    {id:'C09',name:'Tower C09',use:'Hotel · 55 m',design:320,ahus:2,x:52.4,y:77.0,drawPin:true},
-    {id:'C10',name:'Tower C10',use:'Hotel · 55 m',design:320,ahus:2,x:22.3,y:72.6,drawPin:true},
-    {id:'C11',name:'Tower C11',use:'Office · 27 floors · 160 m',design:700,ahus:3,x:19.9,y:84.3,drawPin:true},
-    {id:'C12',name:'Tower C12',use:'Office · 27 floors · 160 m',design:700,ahus:3,x:51.3,y:28.6,drawPin:true},
-    {id:'D01',name:'Tower D01',use:'Residential · 49 floors · 196 m',design:1150,ahus:4,x:41.0,y:58.2},
-    {id:'D02',name:'Tower D02',use:'Residential · 45 floors · 154 m',design:900,ahus:3,x:53.1,y:58.7},
-    {id:'D03',name:'Tower D03',use:'Residential · 45 floors · 154 m',design:1400,ahus:4,x:62.4,y:43.3},
-    {id:'D04',name:'Tower D04',use:'Residential · 39 floors · 133 m',design:950,ahus:3,x:58.9,y:25.9},
-    {id:'D05',name:'Tower D05',use:'Residential · 37 floors · 127 m',design:800,ahus:3,x:30.2,y:25.1},
-    {id:'D06',name:'Tower D06',use:'Office · 24 floors',design:1000,ahus:4,x:43.7,y:24.9},
-    {id:'D07',name:'Tower D07',use:'Hotel · 18 floors',design:850,ahus:3,x:10.8,y:72.2},
-    {id:'D08',name:'Tower D08',use:'Office · 26 floors',design:1050,ahus:4,x:30.7,y:73.3},
-    {id:'D09',name:'Tower D09',use:'Residential · 22 floors',design:950,ahus:3,x:44.0,y:73.5},
-    {id:'D10',name:'Tower D10',use:'Office · 18 floors',design:900,ahus:3,x:63.7,y:75.3}
+    // Positions are % of the site image (cbd-site.png). Pins printed on the image need no drawn pin; C-series are drawn (drawPin).
+    {id:'ICON',name:'Iconic Tower',use:'Mixed-use · 77 floors · 394 m',design:5200,ahus:6,x:6.3,y:30.7},
+    {id:'C01',name:'Tower C01',use:'Office · 35 floors · 174 m',design:900,ahus:4,x:13.1,y:24.3,drawPin:true},
+    {id:'C02',name:'Tower C02',use:'Office · 15 floors · 66 m',design:380,ahus:2,x:24.9,y:26.7,drawPin:true},
+    {id:'C03',name:'Tower C03',use:'Office · 15 floors · 66 m',design:380,ahus:2,x:54.3,y:43.7,drawPin:true},
+    {id:'C04',name:'Tower C04',use:'Office · 34 floors · 170 m',design:880,ahus:4,x:70.7,y:29.2,drawPin:true},
+    {id:'C05',name:'Tower C05',use:'Office · 18 floors · 79 m',design:450,ahus:3,x:60.2,y:64.0,drawPin:true},
+    {id:'C06',name:'Tower C06',use:'Office · 18 floors · 79 m',design:450,ahus:3,x:72.6,y:45.7,drawPin:true},
+    {id:'C07',name:'Tower C07',use:'Office · 32 floors · 141 m',design:800,ahus:4,x:37.6,y:25.3,drawPin:true},
+    {id:'C08',name:'Tower C08',use:'Office · 32 floors · 141 m',design:800,ahus:4,x:73.0,y:63.2,drawPin:true},
+    {id:'C09',name:'Tower C09',use:'Hotel · 55 m',design:320,ahus:2,x:53.7,y:77.7,drawPin:true},
+    {id:'C10',name:'Tower C10',use:'Hotel · 55 m',design:320,ahus:2,x:19.6,y:80.7,drawPin:true},
+    {id:'C11',name:'Tower C11',use:'Office · 27 floors · 160 m',design:700,ahus:3,x:8.2,y:84.5,drawPin:true},
+    {id:'C12',name:'Tower C12',use:'Office · 27 floors · 160 m',design:700,ahus:3,x:52.4,y:28.2,drawPin:true},
+    {id:'D01',name:'Tower D01',use:'Residential · 49 floors · 196 m',design:1150,ahus:4,x:41.2,y:59.3},
+    {id:'D02',name:'Tower D02',use:'Residential · 45 floors · 154 m',design:900,ahus:3,x:54.1,y:59.3},
+    {id:'D03',name:'Tower D03',use:'Residential · 45 floors · 154 m',design:1400,ahus:4,x:64.3,y:42.8},
+    {id:'D04',name:'Tower D04',use:'Residential · 39 floors · 133 m',design:950,ahus:3,x:59.8,y:23.8},
+    {id:'D05',name:'Tower D05',use:'Residential · 37 floors · 127 m',design:800,ahus:3,x:29.1,y:23.8},
+    {id:'D06',name:'Tower D06',use:'Office · 24 floors',design:1000,ahus:4,x:43.7,y:23.8},
+    {id:'D07',name:'Tower D07',use:'Hotel · 18 floors',design:850,ahus:3,x:9.9,y:72.7},
+    {id:'D08',name:'Tower D08',use:'Office · 26 floors',design:1050,ahus:4,x:31.2,y:73.6},
+    {id:'D09',name:'Tower D09',use:'Residential · 22 floors',design:950,ahus:3,x:44.8,y:74.1},
+    {id:'D10',name:'Tower D10',use:'Office · 18 floors',design:900,ahus:3,x:65.1,y:74.5}
   ];
   TOWERS.forEach(t=>{
     t.kind='tower'; t.zoneSP=24; t.satSP=13; t.n={};
@@ -37,7 +37,7 @@
   });
 
   const plant={
-    id:'CUC',kind:'plant',name:'Central Utilities Complex',use:'District cooling plant · 9 × 3,000 TR installed + 1 future bay',x:76.7,y:54.8,w:22.1,h:19.4,
+    id:'CUC',kind:'plant',name:'Central Utilities Complex',use:'District cooling plant · 9 × 3,000 TR installed + 1 future bay',x:78.2,y:52.5,w:20.7,h:19.9,
     chwsSP:5.5,hist:[],n:{},
     chillers:Array.from({length:9},(_,i)=>({id:`CH-0${i+1}`,cap:CAP,enabled:true,fault:false,hours:[18420,17260,19110,16880,15320,20540,17940,16410,19680][i]})),
     towers:Array.from({length:9},(_,i)=>({id:`CT-${String(i+1).padStart(2,'0')}`,enabled:true,fault:false,fanOverride:null})),
@@ -167,16 +167,16 @@
       t.status=t.zoneT-t.zoneSP>2||e.fault?'crit':(t.zoneT-t.zoneSP>1||offFrac>0?'warn':'ok');
       t.hist.push(t.load); if(t.hist.length>60)t.hist.shift();
 
-      t.ahu.forEach(a=>{ if(a.fault) live.add(raise(`${t.id}-${a.id}`,'crit',`${a.id} supply fan tripped`,t.id)); else if(!a.enabled) live.add(raise(`${t.id}-${a.id}-off`,'warn',`${a.id} stopped by operator`,t.id)); });
+      t.ahu.forEach(a=>{ if(a.fault) live.add(raise(`${t.id}-${a.id}`,'crit',`${a.id} supply fan tripped`,t.id)); else if(!a.enabled) live.add(raise(`${t.id}-${a.id}-off`,'warn',a.maint?`${a.id} out of service for planned maintenance`:`${a.id} stopped by operator`,t.id)); });
       if(e.fault) live.add(raise(`${t.id}-ets`,'crit','ETS plate heat exchanger fouled — secondary CHWS high',t.id));
       if(t.zoneT-t.zoneSP>1) live.add(raise(`${t.id}-zone`,t.zoneT-t.zoneSP>2?'crit':'warn',`Zone temperature ${t.zoneT.toFixed(1)} °C above setpoint`,t.id));
     });
 
-    plant.chillers.forEach(c=>{ if(c.fault) live.add(raise(`CUC-${c.id}`,'crit',`${c.id} tripped on low evaporator pressure`,'CUC')); else if(!c.enabled) live.add(raise(`CUC-${c.id}-off`,'warn',`${c.id} locked out by operator`,'CUC'));
+    plant.chillers.forEach(c=>{ if(c.fault) live.add(raise(`CUC-${c.id}`,'crit',`${c.id} tripped on low evaporator pressure`,'CUC')); else if(!c.enabled) live.add(raise(`CUC-${c.id}-off`,'warn',c.maint?`${c.id} out of service for planned maintenance`:`${c.id} locked out by operator`,'CUC'));
       const n=c.id.slice(-2);
       if((c.chwStr||1)>1) live.add(raise(`CUC-${c.id}-chwstr`,'warn',`Strainer ΔP high on CHWP-${n} suction (bay ${+n}) — clean strainer`,'CUC'));
       if((c.cwStr||1)>1) live.add(raise(`CUC-${c.id}-cwstr`,'warn',`Strainer ΔP high on CWP-${n} suction (bay ${+n}) — clean strainer`,'CUC')); });
-    [...plant.towers,...plant.chwp,...plant.cwp,...plant.dp].forEach(p=>{ if(p.fault) live.add(raise(`CUC-${p.id}`,'crit',`${p.id} VFD fault`,'CUC')); else if(!p.enabled) live.add(raise(`CUC-${p.id}-off`,'warn',`${p.id} disabled by operator`,'CUC')); });
+    [...plant.towers,...plant.chwp,...plant.cwp,...plant.dp].forEach(p=>{ if(p.fault) live.add(raise(`CUC-${p.id}`,'crit',`${p.id} VFD fault`,'CUC')); else if(!p.enabled) live.add(raise(`CUC-${p.id}-off`,'warn',p.maint?`${p.id} out of service for planned maintenance`:`${p.id} disabled by operator`,'CUC')); });
     if(unmet>0) live.add(raise('CUC-short','crit',`Capacity shortfall ${Math.round(unmet).toLocaleString()} TR — no standby chiller`,'CUC'));
     if(plant.chws>plant.chwsSP+1) live.add(raise('CUC-chws','warn',`CHWS ${plant.chws.toFixed(1)} °C drifting above setpoint`,'CUC'));
     if(dpRun<dpNeed) live.add(raise('CUC-dp','crit','Distribution pumping below demand','CUC'));
