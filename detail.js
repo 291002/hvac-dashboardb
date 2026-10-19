@@ -113,7 +113,7 @@
       const i=+id.slice(-2)-1, ch=p.chillers[i];
       const sides=type==='chwp'?[['chwStr','CHW']]:type==='cwp'?[['cwStr','CW']]:[['chwStr','CHW'],['cwStr','CW']];
       sides.forEach(([k,l])=>btns.push(`<button class="btn" data-str="${k}" data-i="${i}">${(ch[k]||1)>1?`Clean ${l} strainer`:`Clog ${l} strainer`}</button>`));
-      note+=(note?' ':'')+'Clog a strainer to watch its ΔP rise and the pump suction pressure fall.';
+      note+=(note?' ':'')+'Clog a strainer to watch the gap between the PT before and the PT after it grow, and the pump suction pressure fall.';
     }
     if(type!=='zone'&&type!=='ets') btns.push(`<button class="btn" id="btn-en">${e.enabled?'Lock out':'Enable'}</button>`);
     if(type!=='zone') btns.push(`<button class="btn ${e.fault?'pri':'bad'}" id="btn-flt">${e.fault?(type==='ets'?'Clean heat exchanger':'Reset fault'):(type==='ets'?'Simulate fouling':'Inject trip')}</button>`);

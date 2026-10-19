@@ -31,17 +31,17 @@
     return {title:`${id} chiller hookup`,vb:'0 52 1000 516', calc:()=>bay(i),
       rows:[
         {y:200,dir:-1,cin:CWS,cout:CWR,from:`From CT-0${n} basin`,to:`To CT-0${n}`,
-          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'str',tag:T('STR',1,1)},{k:'dpt',tag:T('DPT',1,1),name:'CW strainer ΔP',val:d=>bar(d.w.str),alarm:d=>d.w.str>0.35},
-            {k:'pt',tag:T('PT',1,1),name:'CWP suction pressure',val:d=>bar(d.w.suct),alarm:d=>d.on&&d.w.suct<0.9},{k:'pump',tag:`CWP-0${n}`,eq:`CWP-0${n}`,val:d=>`${f1(d.w.hz)} Hz`},
-            {k:'nrv',tag:T('NRV',1,1)},{k:'pt',tag:T('PT',1,2),name:'CWP discharge pressure',val:d=>bar(d.w.dis)},
-            {k:'tt',tag:T('TT',1,1),name:'Condenser water in',val:d=>dc(d.w.tin)},{k:'pt',tag:T('PT',1,3),name:'Condenser inlet pressure',val:d=>bar(d.w.inP)}],
+          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'pt',tag:T('PT',1,5),name:'CW pressure before strainer',val:d=>bar(d.w.suct+d.w.str)},{k:'str',tag:T('STR',1,1)},
+            {k:'pt',tag:T('PT',1,1),name:'CWP suction pressure, after strainer (alarm when low or strainer ΔP > 0.35 bar)',val:d=>bar(d.w.suct),alarm:d=>(d.on&&d.w.suct<0.9)||d.w.str>0.35},{k:'pump',tag:`CWP-0${n}`,eq:`CWP-0${n}`,val:d=>`${f1(d.w.hz)} Hz`},
+            {k:'nrv',tag:T('NRV',1,1)},
+            {k:'tt',tag:T('TT',1,1),name:'Condenser water in',val:d=>dc(d.w.tin)}],
           outlet:[{k:'tt',tag:T('TT',1,2),name:'Condenser water out',val:d=>dc(d.w.tout)},{k:'pt',tag:T('PT',1,4),name:'Condenser outlet pressure',val:d=>bar(d.w.outP)},
             {k:'ft',tag:T('FT',1,1),name:'Condenser water flow',val:d=>ls(d.w.flow)},{k:'mov',tag:T('MOV',1,1),open:d=>d.on},{k:'hv',tag:T('HV',1,2)}]},
         {y:420,dir:1,cin:CHWR,cout:CHWS,from:'From CHW return header',to:'To CHW supply header',
-          inlet:[{k:'hv',tag:T('HV',2,1)},{k:'str',tag:T('STR',2,1)},{k:'dpt',tag:T('DPT',2,1),name:'CHW strainer ΔP',val:d=>bar(d.e.str),alarm:d=>d.e.str>0.35},
-            {k:'pt',tag:T('PT',2,1),name:'CHWP suction pressure',val:d=>bar(d.e.suct),alarm:d=>d.on&&d.e.suct<2.1},{k:'pump',tag:`CHWP-0${n}`,eq:`CHWP-0${n}`,val:d=>`${f1(d.e.hz)} Hz`},
-            {k:'nrv',tag:T('NRV',2,1)},{k:'pt',tag:T('PT',2,2),name:'CHWP discharge pressure',val:d=>bar(d.e.dis)},
-            {k:'tt',tag:T('TT',2,1),name:'Evaporator water in',val:d=>dc(d.e.tin)},{k:'pt',tag:T('PT',2,3),name:'Evaporator inlet pressure',val:d=>bar(d.e.inP)}],
+          inlet:[{k:'hv',tag:T('HV',2,1)},{k:'pt',tag:T('PT',2,5),name:'CHW pressure before strainer',val:d=>bar(d.e.suct+d.e.str)},{k:'str',tag:T('STR',2,1)},
+            {k:'pt',tag:T('PT',2,1),name:'CHWP suction pressure, after strainer (alarm when low or strainer ΔP > 0.35 bar)',val:d=>bar(d.e.suct),alarm:d=>(d.on&&d.e.suct<2.1)||d.e.str>0.35},{k:'pump',tag:`CHWP-0${n}`,eq:`CHWP-0${n}`,val:d=>`${f1(d.e.hz)} Hz`},
+            {k:'nrv',tag:T('NRV',2,1)},
+            {k:'tt',tag:T('TT',2,1),name:'Evaporator water in',val:d=>dc(d.e.tin)}],
           outlet:[{k:'tt',tag:T('TT',2,2),name:'Evaporator water out',val:d=>dc(d.e.tout)},{k:'pt',tag:T('PT',2,4),name:'Evaporator outlet pressure',val:d=>bar(d.e.outP)},
             {k:'ft',tag:T('FT',2,1),name:'Chilled water flow',val:d=>ls(d.e.flow)},{k:'mov',tag:T('MOV',2,1),open:d=>d.on},{k:'hv',tag:T('HV',2,2)}]}
       ],
@@ -60,7 +60,7 @@
     const L=side==='e'?['From CHW return header',`To CH-0${n} evaporator`,CHWR]:[`From CT-0${n} basin`,`To CH-0${n} condenser`,CWS];
     return {title:`${id} pump hookup`,vb:'0 180 1000 270', calc:()=>{const b=bay(i); return {...b,x:b[side],pump:side==='e'?b.p.chwp[i]:b.p.cwp[i]}},
       rows:[{y:330,dir:-1,cin:L[2],cout:L[2],from:L[0],to:L[1],
-        inlet:[{k:'hv',tag:T('HV',1)},{k:'str',tag:T('STR',1)},{k:'dpt',tag:T('DPT',1),name:'Strainer ΔP',val:d=>bar(d.x.str),alarm:d=>d.x.str>0.35},{k:'pt',tag:T('PT',1),name:'Suction pressure',val:d=>bar(d.x.suct)}],
+        inlet:[{k:'hv',tag:T('HV',1)},{k:'pt',tag:T('PT',5),name:'Pressure before strainer',val:d=>bar(d.x.suct+d.x.str)},{k:'str',tag:T('STR',1)},{k:'pt',tag:T('PT',1),name:'Suction pressure, after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.x.suct),alarm:d=>d.x.str>0.35}],
         outlet:[{k:'nrv',tag:T('NRV',1)},{k:'pt',tag:T('PT',2),name:'Discharge pressure',val:d=>bar(d.x.dis)},{k:'ft',tag:T('FT',1),name:'Flow',val:d=>ls(d.x.flow)},{k:'hv',tag:T('HV',3)}]}],
       center:()=>pumpCenter(id),
       texts:d=>[['hk-c1',d.pump.running?`${f1(d.x.hz)} Hz · ${f0(d.x.kW)} kW`:d.pump.fault?'Tripped':'Off'],['hk-c2',d.pump.running?`Head ${f1(d.x.head)} m (${f2(d.x.head*G)} bar)`:'—']],
@@ -74,7 +74,7 @@
       return {x,pump:u,t:p.chws};};
     return {title:`${id} secondary pump hookup`,vb:'0 180 1000 270', calc,
       rows:[{y:330,dir:-1,cin:CHWS,cout:CHWS,from:'From CHW supply header',to:'To CBD loop',
-        inlet:[{k:'hv',tag:T('HV',1)},{k:'str',tag:T('STR',1)},{k:'dpt',tag:T('DPT',1),name:'Strainer ΔP',val:d=>bar(d.x.str)},{k:'pt',tag:T('PT',1),name:'Suction pressure',val:d=>bar(d.x.suct)}],
+        inlet:[{k:'hv',tag:T('HV',1)},{k:'pt',tag:T('PT',3),name:'Pressure before strainer',val:d=>bar(d.x.suct+d.x.str)},{k:'str',tag:T('STR',1)},{k:'pt',tag:T('PT',1),name:'Suction pressure, after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.x.suct),alarm:d=>d.x.str>0.35}],
         outlet:[{k:'nrv',tag:T('NRV',1)},{k:'pt',tag:T('PT',2),name:'Discharge pressure',val:d=>bar(d.x.dis)},{k:'tt',tag:T('TT',1),name:'Supply temperature',val:d=>dc(d.t)},{k:'ft',tag:T('FT',1),name:'Flow',val:d=>ls(d.x.flow)},{k:'hv',tag:T('HV',2)}]}],
       center:()=>pumpCenter(id),
       texts:d=>[['hk-c1',d.pump.running?`${f1(d.x.hz)} Hz · ${f0(d.x.kW)} kW`:d.pump.fault?'Tripped':'Off'],['hk-c2',d.pump.running?`Head ${f1(d.x.head)} m (${f2(d.x.head*G)} bar)`:'—']],
@@ -85,14 +85,14 @@
     const n=i+1, T=(k,r,s)=>`${k}-T${n}${r}${s}`, id=`CT-0${n}`;
     const calc=()=>{const b=bay(i), on=b.ct.running, r=on?Math.max(b.w.r,0.5):0;
       return {...b,ton:on,r,pin:on?0.35+0.6*sq(r):0,tin:on?b.p.cwr:b.p.cws,tout:b.p.cws,makeup:on?b.w.flow*3.6*0.013:0,
-        level:on?71+3*Math.sin(Date.now()/9000):78,str:0.06*sq(r),vib:on?1.6+b.ct.fan/60:0};};
+        level:on?71+3*Math.sin(Date.now()/9000):78,pb:0.32,str:0.06*sq(r),vib:on?1.6+b.ct.fan/60:0};};
     return {title:`${id} cooling tower hookup`,vb:'0 60 1000 530', calc,
       rows:[
         {y:205,dir:-1,cin:CWR,from:`From CH-0${n} condenser`,
           inlet:[{k:'hv',tag:T('HV',1,1)},{k:'mov',tag:T('MOV',1,1),open:d=>d.ton},{k:'tt',tag:T('TT',1,1),name:'Hot water in',val:d=>dc(d.tin)},{k:'pt',tag:T('PT',1,1),name:'Distribution header pressure',val:d=>bar(d.pin)}]},
         {y:440,dir:1,cin:'var(--mkup)',cout:CWS,from:'Makeup water (city)',to:`To CWP-0${n} suction`,
           inlet:[{k:'hv',tag:T('HV',2,1)},{k:'fq',tag:T('FQ',2,1),name:'Makeup water flow',val:d=>`${f1(d.makeup)} m³/h`},{k:'mov',tag:T('LV',2,1),open:d=>d.makeup>0},{k:'lt',tag:T('LT',2,1),name:'Basin level',val:d=>`${f0(d.level)} %`}],
-          outlet:[{k:'tt',tag:T('TT',2,1),name:'Basin water out',val:d=>dc(d.tout)},{k:'hv',tag:T('HV',2,2)},{k:'str',tag:T('STR',2,1)},{k:'dpt',tag:T('DPT',2,1),name:'Basin strainer ΔP',val:d=>bar(d.str)}]}
+          outlet:[{k:'tt',tag:T('TT',2,1),name:'Basin water out',val:d=>dc(d.tout)},{k:'hv',tag:T('HV',2,2)},{k:'pt',tag:T('PT',2,1),name:'Basin outlet pressure before strainer',val:d=>bar(d.pb)},{k:'str',tag:T('STR',2,1)},{k:'pt',tag:T('PT',2,2),name:'Basin outlet pressure after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.pb-d.str),alarm:d=>d.str>0.35}]}
       ],
       center:()=>`<rect class="hk-box" x="480" y="96" width="40" height="54"/>
         <g transform="translate(500,112)"><circle r="24" class="hk-box"/><g data-rot="${id}">${[0,90,180,270].map(r=>`<path d="M0,0C6,-6 6,-16 0,-21C-4,-15 -3,-6 0,0Z" fill="var(--muted)" transform="rotate(${r})"/>`).join('')}</g></g>
@@ -109,15 +109,18 @@
   function etsSpec(t){
     const T=(k,r,s)=>`${k}-E${r}${s}`;
     const calc=()=>{const e=t.ets, v=(e.valve||0)/100;
-      return {e,v,pIn:3.4,str:0.08*sq(v),hx:0.5*sq(v),cv:0.35*sq(v),sIn:2.9,sHx:0.4*sq(t.lf)};};
+      return {e,v,pIn:3.4,str:0.08*sq(v),hx:0.5*sq(v),cv:0.35*sq(v),sIn:2.9,sStr:0.06*sq(t.lf),sHx:0.4*sq(t.lf)};};
     return {title:`${t.id} ETS-1 hookup`,vb:'0 52 1000 516', calc,
       rows:[
         {y:200,dir:-1,cin:CHWS,cout:CHWR,from:'Primary CHWS from CUC',to:'Primary CHWR to CUC',
-          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'str',tag:T('STR',1,1)},{k:'dpt',tag:T('DPT',1,1),name:'Strainer ΔP',val:d=>bar(d.str)},{k:'tt',tag:T('TT',1,1),name:'Primary supply temp',val:d=>dc(d.e.priS)},{k:'pt',tag:T('PT',1,1),name:'Primary supply pressure',val:d=>bar(d.pIn-d.str)}],
+          // strainer ΔP = PT before − PT after
+          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'pt',tag:T('PT',1,1),name:'Primary pressure before strainer',val:d=>bar(d.pIn)},{k:'str',tag:T('STR',1,1)},
+            {k:'pt',tag:T('PT',1,3),name:'Primary pressure after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.pIn-d.str),alarm:d=>d.str>0.35},{k:'tt',tag:T('TT',1,1),name:'Primary supply temp',val:d=>dc(d.e.priS)}],
           outlet:[{k:'tt',tag:T('TT',1,2),name:'Primary return temp',val:d=>dc(d.e.priR)},{k:'pt',tag:T('PT',1,2),name:'Primary return pressure',val:d=>bar(d.pIn-d.str-d.hx)},{k:'cv',tag:T('CV',1,1),val:d=>`${f0(d.e.valve)} %`},{k:'ft',tag:T('FT',1,1),name:'Primary flow',val:d=>ls(d.e.flow)},{k:'hv',tag:T('HV',1,2)}]},
         {y:420,dir:1,cin:CHWR,cout:CHWS,from:'Secondary CHWR from AHUs',to:'Secondary CHWS to AHUs',
-          inlet:[{k:'hv',tag:T('HV',2,1)},{k:'str',tag:T('STR',2,1)},{k:'tt',tag:T('TT',2,1),name:'Secondary return temp',val:d=>dc(d.e.secR)},{k:'pt',tag:T('PT',2,1),name:'Secondary return pressure',val:d=>bar(d.sIn)}],
-          outlet:[{k:'tt',tag:T('TT',2,2),name:'Secondary supply temp',val:d=>dc(d.e.secS),alarm:d=>d.e.fault},{k:'pt',tag:T('PT',2,2),name:'Secondary supply pressure',val:d=>bar(d.sIn-d.sHx)},{k:'hv',tag:T('HV',2,2)}]}
+          inlet:[{k:'hv',tag:T('HV',2,1)},{k:'pt',tag:T('PT',2,1),name:'Secondary pressure before strainer',val:d=>bar(d.sIn)},{k:'str',tag:T('STR',2,1)},
+            {k:'pt',tag:T('PT',2,3),name:'Secondary pressure after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.sIn-d.sStr),alarm:d=>d.sStr>0.35},{k:'tt',tag:T('TT',2,1),name:'Secondary return temp',val:d=>dc(d.e.secR)}],
+          outlet:[{k:'tt',tag:T('TT',2,2),name:'Secondary supply temp',val:d=>dc(d.e.secS),alarm:d=>d.e.fault},{k:'pt',tag:T('PT',2,2),name:'Secondary supply pressure',val:d=>bar(d.sIn-d.sStr-d.sHx)},{k:'hv',tag:T('HV',2,2)}]}
       ],
       center:()=>`<rect class="hk-box" x="${CX0+10}" y="160" width="100" height="300" rx="4"/>${Array.from({length:9},(_,k)=>`<line x1="${462+k*9.5}" x2="${462+k*9.5}" y1="176" y2="444" stroke="var(--line-2)" stroke-width="3"/>`).join('')}
         <rect x="462" y="292" width="76" height="40" rx="3" class="hk-box"/><text class="hk-title" x="500" y="318" text-anchor="middle">PHE</text><text id="hk-c1" class="hk-sub hk-strong" x="500" y="354" text-anchor="middle" style="paint-order:stroke;stroke:var(--box);stroke-width:4px">—</text>`,
@@ -128,13 +131,14 @@
   function ahuSpec(t,a){
     const no=a.id.slice(-2), T=(k,r,s)=>`${k}-A${+no}${r}${s}`;
     const calc=()=>{const e=t.ets, v=(a.valve||0)/100, on=a.running;
-      return {a,on,v,tin:e.secS,tout:on?e.secS+0.5+5.5*v:e.secS,pin:3.1,coil:0.45*sq(v),flow:on?(t.design/t.ahus)*TRK/(CP*6)*v:0,
+      return {a,on,v,tin:e.secS,tout:on?e.secS+0.5+5.5*v:e.secS,pin:3.1,str:0.05*sq(v),coil:0.45*sq(v),flow:on?(t.design/t.ahus)*TRK/(CP*6)*v:0,
         oa:on?20+12*t.occ:0,rat:t.zoneT+0.8,airflow:on?(t.design/t.ahus)*0.045*a.fan/100:0};};
     return {title:`${t.id} ${a.id} hookup`,vb:'0 52 1000 516', calc,
       rows:[
         {y:200,dir:-1,cin:CHWS,cout:CHWR,from:'CHW supply riser',to:'CHW return riser',
-          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'str',tag:T('STR',1,1)},{k:'tt',tag:T('TT',1,1),name:'Coil CHW in',val:d=>dc(d.tin)},{k:'pt',tag:T('PT',1,1),name:'Coil inlet pressure',val:d=>bar(d.pin)}],
-          outlet:[{k:'tt',tag:T('TT',1,2),name:'Coil CHW out',val:d=>dc(d.tout)},{k:'pt',tag:T('PT',1,2),name:'Coil outlet pressure',val:d=>bar(d.pin-d.coil)},{k:'cv',tag:T('PICV',1,1),val:d=>`${f0(d.a.valve||0)} %`},{k:'ft',tag:T('FT',1,1),name:'Coil CHW flow',val:d=>`${f1(d.flow)} l/s`},{k:'hv',tag:T('HV',1,2)}]},
+          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'pt',tag:T('PT',1,1),name:'CHW pressure before strainer',val:d=>bar(d.pin)},{k:'str',tag:T('STR',1,1)},
+            {k:'pt',tag:T('PT',1,3),name:'CHW pressure after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.pin-d.str),alarm:d=>d.str>0.35},{k:'tt',tag:T('TT',1,1),name:'Coil CHW in',val:d=>dc(d.tin)}],
+          outlet:[{k:'tt',tag:T('TT',1,2),name:'Coil CHW out',val:d=>dc(d.tout)},{k:'pt',tag:T('PT',1,2),name:'Coil outlet pressure',val:d=>bar(d.pin-d.str-d.coil)},{k:'cv',tag:T('PICV',1,1),val:d=>`${f0(d.a.valve||0)} %`},{k:'ft',tag:T('FT',1,1),name:'Coil CHW flow',val:d=>`${f1(d.flow)} l/s`},{k:'hv',tag:T('HV',1,2)}]},
         {y:420,dir:1,duct:true,cin:AIR,cout:AIR,from:'Return + outside air',to:'Supply air to floors',
           inlet:[{k:'cv',tag:T('OAD',2,1),val:d=>`${f0(d.oa)} %`},{k:'tt',tag:T('TT',2,1),name:'Return air temp',val:d=>dc(d.rat)},{k:'dpt',tag:T('DPT',2,1),name:'Filter ΔP',val:d=>d.on?`${f0(d.a.filterPa)} Pa`:'—'}],
           outlet:[{k:'tt',tag:T('TT',2,2),name:'Supply air temp',val:d=>dc(d.a.sat)},{k:'mt',tag:T('MT',2,1),name:'Supply humidity',val:d=>d.on?`${f0(d.a.rh)} %RH`:'—'},{k:'at',tag:T('AT',2,1),name:'CO₂',val:d=>`${f0(d.a.co2)} ppm`},{k:'ft',tag:T('FT',2,1),name:'Airflow',val:d=>`${f1(d.airflow)} m³/s`}]}
