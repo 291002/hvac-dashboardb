@@ -46,10 +46,18 @@
     dp:Array.from({length:4},(_,i)=>({id:`DP-0${i+1}`,enabled:true,fault:false,speedOverride:null}))
   };
 
-  const alarms=new Map(); // key -> {sev,text,since,asset}
-  function raise(key,sev,text,asset){ if(!alarms.has(key)) alarms.set(key,{sev,text,asset,since:new Date()}); else Object.assign(alarms.get(key),{sev,text}); return key; }
+  const alarms=new Map(); // key -> {sev,text,since,asset,eq,log}
+  // alarm history: one entry per occurrence, closed (cleared) when the alarm goes away; newest last
+  const alarmLog=[]; let logId=0;
+  const eqOf=key=>{const r=key.split('-').slice(1).join('-'), m=r.match(/^(CH|CT|CHWP|CWP|DP|AHU)-\d+/);
+    if(/-chwstr$/.test(r)) return 'CHWP-'+r.slice(3,5); if(/-cwstr$/.test(r)) return 'CWP-'+r.slice(3,5);
+    return m?m[0]:r==='ets'?'ETS-1':r==='zone'?'ZONE':null;};
+  function raise(key,sev,text,asset){
+    if(!alarms.has(key)){ const e={id:++logId,key,sev,text,asset,eq:eqOf(key),since:new Date(),cleared:null}; alarmLog.push(e); if(alarmLog.length>600) alarmLog.shift(); alarms.set(key,{sev,text,asset,eq:e.eq,since:e.since,log:e}); }
+    else { const x=alarms.get(key); Object.assign(x,{sev,text}); if(sev==='crit') x.log.sev='crit'; x.log.text=text; }
+    return key; }
 
-  const S={towers:TOWERS,plant,alarms,site:{},clamp};
+  const S={towers:TOWERS,plant,alarms,alarmLog,site:{},clamp};
   const weather={};
 
   function step(){
@@ -180,7 +188,7 @@
     if(unmet>0) live.add(raise('CUC-short','crit',`Capacity shortfall ${Math.round(unmet).toLocaleString()} TR — no standby chiller`,'CUC'));
     if(plant.chws>plant.chwsSP+1) live.add(raise('CUC-chws','warn',`CHWS ${plant.chws.toFixed(1)} °C drifting above setpoint`,'CUC'));
     if(dpRun<dpNeed) live.add(raise('CUC-dp','crit','Distribution pumping below demand','CUC'));
-    [...alarms.keys()].forEach(k=>{ if(!live.has(k)) alarms.delete(k); });
+    [...alarms.keys()].forEach(k=>{ if(!live.has(k)){ alarms.get(k).log.cleared=new Date(); alarms.delete(k); } });
 
     plant.status=[...alarms.values()].some(a=>a.asset==='CUC'&&a.sev==='crit')?'crit':([...alarms.values()].some(a=>a.asset==='CUC')?'warn':'ok');
     plant.hist.push({load:produced,kwtr:plant.kwtr,chws:plant.chws,kW:plant.kW}); if(plant.hist.length>120) plant.hist.shift();
@@ -192,6 +200,30 @@
 
   S.step=step;
   S.find=id=>id==='CUC'?plant:TOWERS.find(t=>t.id===id);
+  // past 7 days of alarm history (simulated, same every load for a given day) so the log opens populated
+  (function(){
+    const R=n=>{n|=0;n=Math.imul(n^(n>>>16),0x45d9f3b);n=Math.imul(n^(n>>>16),0x45d9f3b);return ((n^(n>>>16))>>>0)/4294967296;};
+    const ids=TOWERS.map(t=>t.id), pick=(arr,r)=>arr[Math.floor(r*arr.length)], n2=r=>String(1+Math.floor(r*9)).padStart(2,'0');
+    const TPL=[
+      r=>{const n=n2(r);return ['CUC',`CH-${n}`,'crit',`CH-${n} tripped on low evaporator pressure`]},
+      r=>{const n=n2(r);return ['CUC',`CHWP-${n}`,'warn',`Strainer ΔP high on CHWP-${n} suction (bay ${+n}) — clean strainer`]},
+      r=>{const n=n2(r);return ['CUC',`CWP-${n}`,'warn',`Strainer ΔP high on CWP-${n} suction (bay ${+n}) — clean strainer`]},
+      r=>{const n=n2(r);return ['CUC',`CT-${n}`,'crit',`CT-${n} VFD fault`]},
+      r=>{const n=String(1+Math.floor(r*4)).padStart(2,'0');return ['CUC',`DP-${n}`,'crit',`DP-${n} VFD fault`]},
+      r=>['CUC',null,'warn',`CHWS ${(6.6+r*1.2).toFixed(1)} °C drifting above setpoint`],
+      r=>{const t=pick(ids,r);return [t,'ZONE',r>.7?'crit':'warn',`Zone temperature ${(25.1+r*2).toFixed(1)} °C above setpoint`]},
+      r=>{const t=TOWERS[Math.floor(r*TOWERS.length)], a=String(1+Math.floor(R(r*1e6)*t.ahus)).padStart(2,'0');return [t.id,`AHU-${a}`,'crit',`AHU-${a} supply fan tripped`]},
+      r=>{const t=pick(ids,r);return [t,'ETS-1','crit','ETS plate heat exchanger fouled — secondary CHWS high']},
+      r=>{const t=TOWERS[Math.floor(r*TOWERS.length)], a=String(1+Math.floor(R(r*1e6)*t.ahus)).padStart(2,'0');return [t.id,`AHU-${a}`,'warn',`AHU-${a} stopped by operator`]}
+    ];
+    const now=Date.now(), d0=new Date(); d0.setHours(0,0,0,0); const base=Math.floor(d0/864e5), out=[];
+    for(let d=7;d>=0;d--){ const day=base-d, cnt=5+Math.floor(R(day*7)*6);
+      for(let i=0;i<cnt;i++){ const k=day*97+i*13, r=R(k), tpl=TPL[Math.floor(R(k+1)*TPL.length)](R(k+2));
+        const t0=+d0-d*864e5+R(k+3)*864e5, dur=(4+R(k+4)**2*230)*6e4;
+        if(t0+dur>now-6e4) continue;
+        out.push({key:`${tpl[0]}-${tpl[1]||'sys'}`,asset:tpl[0],eq:tpl[1],sev:tpl[2],text:tpl[3],since:new Date(t0),cleared:new Date(t0+dur),past:true}); } }
+    out.sort((a,b)=>a.since-b.since).forEach(e=>{e.id=++logId; alarmLog.push(e);});
+  })();
   // warm the history so trends open populated
   for(let i=0;i<120;i++) step();
   window.SIM=S;

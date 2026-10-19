@@ -31,7 +31,11 @@
       ['Zone avg',f1(s.zoneAvg),'°C'],
       ['Alarms',s.alarms,s.crit?`${s.crit} crit`:'',s.alarms?'alarm':'']
     ];
-    $('#siteKpis').innerHTML=tiles.map(([l,v,u,c])=>`<div class="k ${c||''}"><span class="label">${l}</span><span class="v">${v}<small>${u}</small></span></div>`).join('');
+    // the Alarms tile is a button that opens the alarm view (location + history); the negative delay keeps its pulse
+    // in step across the once-a-second re-render instead of restarting it
+    $('#siteKpis').innerHTML=tiles.map(([l,v,u,c])=>l==='Alarms'
+      ?`<button class="k ak ${c||''}" id="openAlarms" style="animation-delay:-${Date.now()%1400}ms" aria-label="${v} active alarms — open alarm view"><span class="label">${l} <em>View →</em></span><span class="v">${v}<small>${u}</small></span></button>`
+      :`<div class="k ${c||''}"><span class="label">${l}</span><span class="v">${v}<small>${u}</small></span></div>`).join('');
     const all=[p,...S.towers], n=k=>all.filter(a=>a.status===k).length;
     $('#legendCount').textContent=`${n('ok')} of ${all.length} normal`;
   }
@@ -68,7 +72,9 @@
   document.addEventListener('pointerdown',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.button===0) open('CUC',r.dataset.eq);});
   document.addEventListener('click',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.detail===0) open('CUC',r.dataset.eq);});
 
-  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); if(e.target.closest('#openReports')) setView('reports'); if(e.target.closest('#openMaint')) setView('maint'); });
+  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); if(e.target.closest('#openReports')) setView('reports'); if(e.target.closest('#openMaint')) setView('maint'); if(e.target.closest('#openAlarms')&&e.detail===0) UI.openAlarms(); });
+  // the KPI bar re-renders every second, so open the alarm view on pointerdown
+  document.addEventListener('pointerdown',e=>{ if(e.target.closest('#openAlarms')&&e.button===0) UI.openAlarms(); });
 
   function buildMap(){
     const stage=$('#stage');
@@ -121,10 +127,11 @@
 
   function setView(v){
     const from=UI.view; UI.view=v;
-    [['#mapView','map'],['#detail','detail'],['#analytics','analytics'],['#reports','reports'],['#maint','maint']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
+    [['#mapView','map'],['#detail','detail'],['#analytics','analytics'],['#reports','reports'],['#maint','maint'],['#alarmView','alarms']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
     if(v==='analytics') UI.renderAnalytics();
     if(v==='reports') UI.renderReports();
     if(v==='maint') UI.renderMaint();
+    if(v==='alarms') UI.renderAlarms();
     if(v==='map'){
       UI.hover=null; renderPop(); renderSite(); renderSide();
       if(from==='detail'){const pin=document.querySelector(`.hot[data-id="${UI.selected}"]`); if(pin) pin.focus({preventScroll:true}); UI.hover=null; renderPop();}
@@ -152,6 +159,7 @@
     if(UI.view==='map'){ renderSide(); if(UI.hover) renderPop(); }
     else if(UI.view==='detail') UI.updateDetail();
     else if(UI.view==='analytics') UI.renderAnalytics();
+    else if(UI.view==='alarms') UI.renderAlarms(false);
   }
   UI.tick=tick;
 

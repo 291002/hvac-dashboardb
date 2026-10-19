@@ -18,6 +18,7 @@ All values are simulated; nothing is connected to a real BMS.
 | `hookup.js` | Equipment hookup drawings (valves, strainers, pumps, PT/TT/FT sensors) |
 | `analytics.js` | Performance — CUC plant vs published benchmarks + all towers with comfort / CO₂ / ΔT checks (merged Analytics + Benchmarks) |
 | `maint.js` | Maintenance — equipment needing work (overdue, due in 7 days, live faults), work in progress with a finish notice, this month's plan calendar, print / PDF and Excel (CSV) export |
+| `alarms.js` | Alarms — opened from the Alarms tile on the site map: active alarms marked on a site map with their equipment and room, alarm history (raised, cleared, duration; 24 h / 7 days / all), severity and location filters, CSV export, jump to the equipment hookup |
 | `reports.js` | Reports — overall site report and/or any towers, period (today → 30 days or custom), sections; print / save as PDF or download Excel (CSV) |
 
 ## To edit later

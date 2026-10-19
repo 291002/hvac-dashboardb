@@ -153,9 +153,20 @@ button{font:inherit;color:inherit}
 .kpibar .k:last-child{border-right:0}
 .kpibar .v{font:600 21px/1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpibar .v small{font:500 11.5px var(--sans);color:var(--muted);margin-left:3px}
-.kpibar .k.alarm .v{color:var(--warn)}
+.kpibar button.k{background:transparent;border:0;border-right:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:0 3px 3px 0}
+.kpibar button.k:hover,.kpibar button.k:focus-visible{background:var(--hover)}
+.kpibar .k em{font-style:normal;color:var(--se);letter-spacing:0;text-transform:none;margin-left:4px}
+/* active alarms: red tile that pulses (glow + blinking dot) to catch the eye */
+.kpibar button.k.alarm{position:relative;border-radius:3px;animation:alk 1.4s ease-in-out infinite}
+.kpibar button.k.alarm .v,.kpibar button.k.alarm .label,.kpibar button.k.alarm em{color:var(--crit)}
+.kpibar button.k.alarm .v small{color:var(--crit);opacity:.85}
+.kpibar button.k.alarm::after{content:"";position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:var(--crit);animation:alb 1.4s ease-in-out infinite;animation-delay:inherit}
+.kpibar button.k.alarm:hover{background:rgba(255,95,95,.35)}
+@keyframes alk{0%,100%{background:rgba(255,95,95,.10);box-shadow:inset 0 0 0 1px rgba(255,95,95,.55)}50%{background:rgba(255,95,95,.30);box-shadow:inset 0 0 0 2px var(--crit),0 0 20px rgba(255,95,95,.65)}}
+@keyframes alb{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.6)}}
+@media (prefers-reduced-motion:reduce){.kpibar button.k.alarm{animation:none;background:rgba(255,95,95,.22);box-shadow:inset 0 0 0 2px var(--crit)}.kpibar button.k.alarm::after{animation:none}}
 .kpibar .label{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@container (max-width:900px){.kpibar{grid-template-columns:repeat(3,minmax(0,1fr))}.kpibar .k:nth-child(n+4){display:none}.hint{font-size:11px}}
+@container (max-width:900px){.kpibar{grid-template-columns:repeat(4,minmax(0,1fr))}.kpibar .k:nth-child(4),.kpibar .k:nth-child(5){display:none}.hint{font-size:11px}}
 @container (max-width:620px){.legendplate,.kpibar{display:none}.hint{font-size:10.5px;padding:4px 7px}}
 
 .pop{position:absolute;z-index:5;width:250px;background:var(--pop-bg);border:1px solid var(--line-2);border-radius:4px;box-shadow:0 12px 30px var(--shadow);padding:12px;pointer-events:none;display:grid;gap:9px}
@@ -507,6 +518,44 @@ i.done{background:var(--ok)}i.over{background:var(--crit)}i.wip{background:var(-
 @keyframes tin{from{opacity:0;transform:translateX(12px)}}
 @media (max-width:1180px){#maint .an-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}#maint .seg{margin-left:0}}
 @media (max-width:900px){#maint{display:block;overflow-y:auto}.mt-body{grid-template-columns:1fr}.mt-right{border-left:0!important;border-top:1px solid var(--line)}.mt-list{overflow:visible}.mt-row{grid-template-columns:1fr auto}.mt-t{grid-column:1/-1;grid-row:2}.mt-x{flex-wrap:wrap}}
+
+/* Alarms view */
+#alarmView .seg{margin-left:auto}
+.al-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);min-height:0}
+.al-left{grid-template-rows:auto auto auto minmax(0,1fr)}
+.al-mapbox{padding:0 16px;display:flex;justify-content:center}
+.al-map{position:relative;width:min(100%,calc(38vh * 1528 / 1029));aspect-ratio:1528/1029;border:1px solid var(--line-2);border-radius:3px;overflow:hidden;background:var(--panel-2)}
+.al-map img{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.85}
+.al-pin{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:4px;padding:0 6px 0 0;border:1px solid var(--warn);border-radius:12px;background:var(--pop-bg);color:var(--text);cursor:pointer;font:600 11px var(--mono);white-space:nowrap;box-shadow:0 0 0 0 var(--warn);animation:alp 1.8s infinite;--pc:rgba(242,180,61,.6)}
+.al-pin b{display:grid;place-items:center;min-width:20px;height:20px;border-radius:10px;background:var(--warn);color:#10201a;font-size:11px}
+.al-pin.crit{border-color:var(--crit);--pc:rgba(255,95,95,.6)}.al-pin.crit b{background:var(--crit);color:#fff}
+.al-pin.hist{border-style:dashed;animation:none;opacity:.9}.al-pin.hist b{background:var(--off);color:#fff}
+.al-pin.on{z-index:2;outline:2px solid var(--se);outline-offset:2px}
+.al-pin:hover{z-index:3}
+@keyframes alp{0%{box-shadow:0 0 0 0 var(--pc)}70%,100%{box-shadow:0 0 0 10px transparent}}
+@media (prefers-reduced-motion:reduce){.al-pin{animation:none}}
+.al-acth{padding-top:12px}
+.al-list{overflow-y:auto;min-height:0;padding:0 16px 14px;display:grid;gap:5px;align-content:start}
+.al-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:6px 9px;background:var(--panel-2);border-left:3px solid var(--c);border-radius:2px;cursor:pointer}
+.al-row:hover,.al-row:focus-visible{background:var(--hover)}
+.al-row.on{box-shadow:inset 0 0 0 1px var(--se-deep)}
+.al-t{display:grid;gap:2px;min-width:0}.al-t b{font-weight:500;font-size:12.5px}.al-t small,.al-m small{font-size:11px;color:var(--muted)}
+.al-m{display:grid;gap:3px;justify-items:end;text-align:right}
+.al-row .btn,.al-tbl .btn{padding:4px 9px;font-size:12px;white-space:nowrap}
+.al-sev{display:inline-block;padding:2px 7px;border-radius:2px;font:600 10.5px/1.3 var(--sans);letter-spacing:.05em;text-transform:uppercase;border:1px solid currentColor;white-space:nowrap}
+.al-sev.crit{color:var(--crit)}.al-sev.warn{color:var(--warn)}
+.al-live{color:var(--crit);font-weight:600}
+.al-right{grid-template-rows:auto minmax(0,1fr)}
+.al-per{margin-left:0!important}.al-per button{padding:5px 9px;font-size:12px}
+.al-hist{padding:0 16px 12px}
+.al-tbl td{vertical-align:middle}.al-tbl small{color:var(--muted);font-size:11px}
+.al-tbl .al-msg{white-space:normal;min-width:220px}
+.al-tbl tr.on td{background:var(--hover)}
+.al-link{background:none;border:0;padding:0;color:var(--se);cursor:pointer;font:inherit;text-decoration:underline}
+.al-selw{color:var(--text)}
+.al-pad{padding:6px 0}
+@media (max-width:1180px){#alarmView .an-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}#alarmView .seg{margin-left:0}}
+@media (max-width:900px){#alarmView{display:block;overflow-y:auto}.al-body{grid-template-columns:1fr}.al-right{border-left:0!important;border-top:1px solid var(--line)}.al-list{overflow:visible}.al-row{grid-template-columns:1fr auto}.al-row .btn{grid-column:1/-1;justify-self:start}}
 /* theme switch (sun / moon icon) */
 .theme-btn{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;background:transparent;border:1px solid var(--line-2);border-radius:3px;color:var(--muted);cursor:pointer}
 .theme-btn:hover{color:var(--text);border-color:var(--muted)}
@@ -566,6 +615,7 @@ i.done{background:var(--ok)}i.over{background:var(--crit)}i.wip{background:var(-
     <section class="view an off" id="analytics" aria-label="Performance"></section>
     <section class="view an off" id="reports" aria-label="Reports"></section>
     <section class="view an off" id="maint" aria-label="Maintenance"></section>
+    <section class="view an off" id="alarmView" aria-label="Alarms"></section>
   </main>
 </div>
 
@@ -580,10 +630,11 @@ i.done{background:var(--ok)}i.over{background:var(--crit)}i.wip{background:var(-
   btn.addEventListener('click',()=>{ const t=root.dataset.theme==='light'?'dark':'light'; set(t); try{ localStorage.setItem('cuc-theme',t); }catch(e){} });
 })();
 </script>
-<script src="sim.js?v=20261019b"></script>
-<script src="ui.js?v=20261019d"></script>
+<script src="sim.js?v=20261019e"></script>
+<script src="ui.js?v=20261019f"></script>
 <script src="hookup.js?v=20261019c"></script>
 <script src="analytics.js?v=20261013b"></script>
 <script src="reports.js?v=20261019c"></script>
 <script src="maint.js?v=20261019c"></script>
+<script src="alarms.js?v=20261019a"></script>
 <script src="detail.js?v=20261019b"></script>
