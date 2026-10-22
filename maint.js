@@ -332,5 +332,7 @@
     render(false);
   }
   UI.renderMaint=()=>render(true);
+  // read-only snapshot for the Management tab (all equipment groups)
+  UI.maintSnapshot=()=>{ const g=st.g; st.g='all'; const M=model(); st.g=g; return M; };
   setInterval(loop,1000); setTimeout(loop,0);
 })();

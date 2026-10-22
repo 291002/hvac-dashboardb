@@ -58,11 +58,24 @@
   ];
   const niceMax=v=>{const p=Math.pow(10,Math.floor(Math.log10(Math.max(v,1e-6)))); return [1,2,2.5,5,10].map(m=>m*p).find(m=>m>=v)};
   let sortKey='status', sortDir=1, metric='load', mode='chart', built=false;
+  let sub=(()=>{try{return localStorage.getItem('cuc-pf-sub')||'bench'}catch(e){return 'bench'}})();
+  const stamp=()=>{const d=new Date(); return `CBD_operations_energy_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+  function printFallback(){
+    let area=document.getElementById('printArea');
+    if(!area){area=document.createElement('div');area.id='printArea';document.body.appendChild(area);}
+    area.innerHTML=UI.energyPdf();
+    const t=document.title; document.title=stamp();
+    try{ window.print(); }catch(e){}
+    document.title=t;
+  }
 
   function build(){
     $('#analytics').innerHTML=`
       <div class="an-head"><button class="btn back" id="anBack">← Site map</button>
-        <div class="dname"><span class="label">CUC plant and ${S.towers.length} buildings vs published benchmarks · live</span><h2>Performance</h2></div>
+        <div class="dname"><span class="label" id="pfEyebrow">CUC plant and ${S.towers.length} buildings vs published benchmarks · live</span><h2>Performance</h2></div>
+        <div class="seg mg-sub" id="pfSub" role="tablist" aria-label="Performance section"><button data-sub="bench" role="tab">Benchmarks</button><button data-sub="ops" role="tab">Operations &amp; energy</button></div>
+        <span class="mg-sample pf-en" title="The plant values come from the dashboard simulation; no real plant or BMS is connected. Scenario loads, tariff and cost rates are illustrative.">Simulated plant</span>
+        <button class="btn pri pf-en" id="pfPdf">Export report</button>
         <div class="bm-scale">${['ex','gd','fr','pr'].map(r=>`<span style="--c:${RATE[r][1]}"><i>${RATE[r][2]}</i>${RATE[r][0]}</span>`).join('')}</div></div>
       <div class="an-tiles pf-tiles" id="anTiles"></div>
       <div class="an-body">
@@ -76,8 +89,12 @@
             <div class="seg pf-mode" role="group" aria-label="View"><button data-mode="chart">Chart</button><button data-mode="table">Table</button></div></div>
           <div class="pf-chart" id="pfChart"><div class="rk-axis" id="rkAxis"></div><div class="rk-rows" id="rkRows"></div><div class="pf-key" id="pfKey"></div></div>
           <div class="an-table-wrap" id="pfTable" hidden><table class="an-table"><thead><tr id="anHead"></tr></thead><tbody id="anRows"></tbody></table></div></section>
-      </div><div class="an-tip" id="anTip" hidden></div>`;
+      </div>
+      <div class="an-tiles mg-tiles pf-en" id="pfEnTiles"></div><div class="mg-body pf-en" id="pfEnBody"></div>
+      <div class="an-tip" id="anTip" hidden></div>`;
     $('#analytics').addEventListener('click',e=>{
+      const sb=e.target.closest('[data-sub]');
+      if(sb){ sub=sb.dataset.sub; try{localStorage.setItem('cuc-pf-sub',sub)}catch(err){} $('#anTip').hidden=true; render(true); return; }
       const b=e.target.closest('[data-metric],[data-mode]'); if(!b) return;
       if(b.dataset.metric) metric=b.dataset.metric; else mode=b.dataset.mode;
       render();
@@ -95,6 +112,7 @@
     });
     $('#analytics').addEventListener('mouseleave',()=>{tip.hidden=true});
     $('#anBack').addEventListener('click',()=>UI.setView('map'));
+    $('#pfPdf').addEventListener('click',()=>UI.savePdf(UI.energyPdf(),stamp(),$('#pfPdf'),printFallback));
     $('#anHead').addEventListener('click',e=>{const th=e.target.closest('[data-sort]'); if(!th) return;
       const k=th.dataset.sort; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=COLS.find(c=>c[0]===k)[3]==='l'?1:-1;} render();});
     // rows re-render every second, so open on pointerdown (mouse/touch) and keyboard clicks
@@ -104,8 +122,14 @@
     built=true;
   }
 
-  function render(){
+  function render(force){
     if(!built) build();
+    const ops=sub==='ops';
+    $('#analytics').classList.toggle('pf-ops',ops);
+    document.querySelectorAll('#pfSub [data-sub]').forEach(b=>{const on=b.dataset.sub===sub; b.classList.toggle('on',on); b.setAttribute('aria-selected',on);});
+    $('#pfEyebrow').textContent=ops?'CUC plant · operating scenarios, optimised sequence and energy cost · decision support':`CUC plant and ${S.towers.length} buildings vs published benchmarks · live`;
+    // operations & energy (energy.js): read-only decision support, no commands sent
+    if(ops){ UI.renderEnergy($('#pfEnTiles'),$('#pfEnBody'),force); return; }
     const p=S.plant, T=S.towers, srcNo=k=>Object.keys(SRC).indexOf(k)+1;
 
     // plant vs benchmarks

@@ -72,7 +72,7 @@
   document.addEventListener('pointerdown',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.button===0) open('CUC',r.dataset.eq);});
   document.addEventListener('click',e=>{const r=e.target.closest('.side .eqrow'); if(r&&e.detail===0) open('CUC',r.dataset.eq);});
 
-  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); if(e.target.closest('#openReports')) setView('reports'); if(e.target.closest('#openMaint')) setView('maint'); if(e.target.closest('#openAlarms')&&e.detail===0) UI.openAlarms(); });
+  document.addEventListener('click',e=>{ if(e.target.closest('#openAnalytics')) setView('analytics'); if(e.target.closest('#openReports')) setView('reports'); if(e.target.closest('#openMaint')) setView('maint'); if(e.target.closest('#openMgmt')) setView('mgmt'); if(e.target.closest('#openAlarms')&&e.detail===0) UI.openAlarms(); });
   // the KPI bar re-renders every second, so open the alarm view on pointerdown
   document.addEventListener('pointerdown',e=>{ if(e.target.closest('#openAlarms')&&e.button===0) UI.openAlarms(); });
 
@@ -127,11 +127,12 @@
 
   function setView(v){
     const from=UI.view; UI.view=v;
-    [['#mapView','map'],['#detail','detail'],['#analytics','analytics'],['#reports','reports'],['#maint','maint'],['#alarmView','alarms']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
+    [['#mapView','map'],['#detail','detail'],['#analytics','analytics'],['#reports','reports'],['#maint','maint'],['#alarmView','alarms'],['#mgmt','mgmt']].forEach(([sel,name])=>{$(sel).classList.toggle('off',v!==name); $(sel).inert=v!==name;});
     if(v==='analytics') UI.renderAnalytics();
     if(v==='reports') UI.renderReports();
     if(v==='maint') UI.renderMaint();
     if(v==='alarms') UI.renderAlarms();
+    if(v==='mgmt') UI.renderMgmt();
     if(v==='map'){
       UI.hover=null; renderPop(); renderSite(); renderSide();
       if(from==='detail'){const pin=document.querySelector(`.hot[data-id="${UI.selected}"]`); if(pin) pin.focus({preventScroll:true}); UI.hover=null; renderPop();}
@@ -160,6 +161,7 @@
     else if(UI.view==='detail') UI.updateDetail();
     else if(UI.view==='analytics') UI.renderAnalytics();
     else if(UI.view==='alarms') UI.renderAlarms(false);
+    else if(UI.view==='mgmt') UI.renderMgmt(false);
   }
   UI.tick=tick;
 

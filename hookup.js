@@ -25,13 +25,35 @@
   }
   const flowSpeed=r=>r>0.02?20+60*Math.min(r,1.2):0;
 
+  // ---------- TDS additive dosing skid TDS-1 (simulated display only — no command reaches real equipment)
+  const DOSE_PPM=25, DOSE_MAX=10, TANK_L=1000, TDS_LIMIT=2000;
+  function dose(){
+    const p=S.plant;
+    const d=p.dose||(p.dose={id:'TDS-1',enabled:true,fault:false,rateOverride:null,level:68,res:DOSE_PPM,t:Date.now()});
+    const now=Date.now(), dt=Math.min(5,(now-d.t)/1000); d.t=now;
+    d.cwFlow=p.cwp.reduce((s,x)=>s+(x.running?x.flow||0:0),0);
+    d.makeup=d.cwFlow*3.6*0.013;                       // m³/h, same evaporation factor as the CT hookups
+    d.auto=d.makeup*DOSE_PPM/1000/1.1;                 // L/h of additive (SG 1.1) to hold the residual
+    d.running=d.enabled&&!d.fault&&d.cwFlow>0;
+    d.rate=d.running?Math.min(DOSE_MAX,d.rateOverride??d.auto):0;
+    d.pct=d.rate/DOSE_MAX*100;
+    const eq=d.auto>0?Math.min(60,DOSE_PPM*d.rate/d.auto):0;
+    d.res+=(eq-d.res)*Math.min(1,dt/40);
+    d.level=Math.max(0,d.level-d.rate*dt/3600/TANK_L*100);
+    d.days=d.rate>0?d.level/100*TANK_L/d.rate/24:Infinity;
+    d.cond=2350+180*Math.sin(now/240000);
+    d.tds=0.65*d.cond; d.tdsAfter=d.tds+d.res*0.4;
+    return d;
+  }
+  dose.target=DOSE_PPM; dose.max=DOSE_MAX; dose.tank=TANK_L; dose.limit=TDS_LIMIT;
+
   // ---------- specs
   function chillerSpec(i){
     const n=i+1, T=(k,r,s)=>`${k}-${n}${r}${s}`, id=`CH-0${n}`;
     return {title:`${id} chiller hookup`,vb:'0 52 1000 516', calc:()=>bay(i),
       rows:[
         {y:200,dir:-1,cin:CWS,cout:CWR,from:`From CT-0${n} basin`,to:`To CT-0${n}`,
-          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'pt',tag:T('PT',1,5),name:'CW pressure before strainer',val:d=>bar(d.w.suct+d.w.str)},{k:'str',tag:T('STR',1,1)},
+          inlet:[{k:'hv',tag:T('HV',1,1)},{k:'inj',tag:T('IQ',1,1)},{k:'pt',tag:T('PT',1,5),name:'CW pressure before strainer',val:d=>bar(d.w.suct+d.w.str)},{k:'str',tag:T('STR',1,1)},
             {k:'pt',tag:T('PT',1,1),name:'CWP suction pressure, after strainer (alarm when low or strainer ΔP > 0.35 bar)',val:d=>bar(d.w.suct),alarm:d=>(d.on&&d.w.suct<0.9)||d.w.str>0.35},{k:'pump',tag:`CWP-0${n}`,eq:`CWP-0${n}`,val:d=>`${f1(d.w.hz)} Hz`},
             {k:'nrv',tag:T('NRV',1,1)},
             {k:'tt',tag:T('TT',1,1),name:'Condenser water in',val:d=>dc(d.w.tin)}],
@@ -60,7 +82,7 @@
     const L=side==='e'?['From CHW return header',`To CH-0${n} evaporator`,CHWR]:[`From CT-0${n} basin`,`To CH-0${n} condenser`,CWS];
     return {title:`${id} pump hookup`,vb:'0 180 1000 270', calc:()=>{const b=bay(i); return {...b,x:b[side],pump:side==='e'?b.p.chwp[i]:b.p.cwp[i]}},
       rows:[{y:330,dir:-1,cin:L[2],cout:L[2],from:L[0],to:L[1],
-        inlet:[{k:'hv',tag:T('HV',1)},{k:'pt',tag:T('PT',5),name:'Pressure before strainer',val:d=>bar(d.x.suct+d.x.str)},{k:'str',tag:T('STR',1)},{k:'pt',tag:T('PT',1),name:'Suction pressure, after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.x.suct),alarm:d=>d.x.str>0.35}],
+        inlet:[{k:'hv',tag:T('HV',1)},...(side==='w'?[{k:'inj',tag:T('IQ',1)}]:[]),{k:'pt',tag:T('PT',5),name:'Pressure before strainer',val:d=>bar(d.x.suct+d.x.str)},{k:'str',tag:T('STR',1)},{k:'pt',tag:T('PT',1),name:'Suction pressure, after strainer (alarm when strainer ΔP > 0.35 bar)',val:d=>bar(d.x.suct),alarm:d=>d.x.str>0.35}],
         outlet:[{k:'nrv',tag:T('NRV',1)},{k:'pt',tag:T('PT',2),name:'Discharge pressure',val:d=>bar(d.x.dis)},{k:'ft',tag:T('FT',1),name:'Flow',val:d=>ls(d.x.flow)},{k:'hv',tag:T('HV',3)}]}],
       center:()=>pumpCenter(id),
       texts:d=>[['hk-c1',d.pump.running?`${f1(d.x.hz)} Hz · ${f0(d.x.kW)} kW`:d.pump.fault?'Tripped':'Off'],['hk-c2',d.pump.running?`Head ${f1(d.x.head)} m (${f2(d.x.head*G)} bar)`:'—']],
@@ -152,6 +174,29 @@
       speed:d=>({hk0:flowSpeed(d.on?Math.max(d.v,0.2):0),hk1:d.on?30+0.6*d.a.fan:0})};
   }
 
+  function doseSpec(){
+    const T=(k,r,s)=>`${k}-D${r}${s}`, CHEM='var(--chem)', lh=v=>`${f1(v)} L/h`;
+    return {title:'TDS-1 additive dosing hookup',vb:'0 52 1000 516', calc:()=>({d:dose()}),
+      rows:[
+        {y:200,dir:-1,cin:CHEM,cout:CHEM,from:'Additive tank TK-D1',to:'Dosing header to IQ-111 … IQ-911',
+          inlet:[{k:'lt',tag:T('LT',1,1),name:'Additive tank level (alarm below 20 %)',val:d=>`${f0(d.d.level)} %`,alarm:d=>d.d.level<20},{k:'hv',tag:T('HV',1,1)},{k:'str',tag:T('STR',1,1)}],
+          outlet:[{k:'nrv',tag:T('NRV',1,1)},{k:'pt',tag:T('PT',1,1),name:'Dosing discharge pressure',val:d=>bar(d.d.running?3.1+0.04*d.d.pct:0)},{k:'ft',tag:T('FT',1,1),name:'Additive dosing flow',val:d=>lh(d.d.rate)},{k:'hv',tag:T('HV',1,2)}]},
+        {y:420,dir:1,cin:CWS,cout:CWS,from:'CW supply from CT basins',to:'To CWP suction → chiller condensers',
+          inlet:[{k:'tt',tag:T('TT',2,1),name:'CW supply temperature',val:()=>dc(S.plant.cws)},{k:'at',tag:T('AT',2,1),name:'CW conductivity before injection',val:d=>`${f0(d.d.cond)} µS/cm`},{k:'ft',tag:T('FT',2,1),name:'Total CW flow',val:d=>ls(d.d.cwFlow)}],
+          outlet:[{k:'at',tag:T('AT',2,2),name:'Additive residual after injection (alarm below 15 ppm)',val:d=>`${f1(d.d.res)} ppm`,alarm:d=>d.d.res<15},{k:'at',tag:T('AT',2,3),name:`CW TDS after injection (limit ${TDS_LIMIT} ppm)`,val:d=>`${f0(d.d.tdsAfter)} ppm`,alarm:d=>d.d.tdsAfter>TDS_LIMIT},{k:'tt',tag:T('TT',2,2),name:'CW to chillers',val:()=>dc(S.plant.cws)}]}
+      ],
+      center:()=>`<rect class="hk-box" x="${CX0}" y="158" width="120" height="96" rx="6"/>
+        <g transform="translate(500,200)"><circle r="19" class="hk-box"/><g data-rot="TDS-1"><path d="M0,-13L4,0L0,13L-4,0ZM-13,0L0,4L13,0L0,-4Z" fill="var(--muted)"/></g></g>
+        <text class="hk-sub" x="500" y="174" text-anchor="middle">Metering pump</text><text id="hk-c1" class="hk-sub hk-strong" x="500" y="240" text-anchor="middle">—</text>
+        <path class="pipe" d="M${CX0},420H${CX1}" stroke="${CWS}"/><path class="flow" data-flow="hk1" d="M${CX0},420H${CX1}"/>
+        <path d="M500,254V408" fill="none" stroke="${CHEM}" stroke-width="2.5" stroke-dasharray="7 4"/><path d="M493,398l7,12l7,-12z" fill="${CHEM}"/>
+        <circle cx="500" cy="420" r="6" fill="${CHEM}" stroke="var(--panel)" stroke-width="2"/>
+        <text class="hk-sub hk-strong" x="512" y="290">Injection quill</text><text class="hk-sub" x="512" y="306">IQ-n11 · typical, 1 per bay</text><text id="hk-c2" class="hk-sub" x="512" y="330">—</text>
+        <text class="hk-sub" x="512" y="362">After CT basin,</text><text class="hk-sub" x="512" y="376">before CWP + chiller</text>`,
+      texts:d=>[['hk-c1',d.d.running?`${f1(d.d.rate)} L/h · ${f0(d.d.pct)}% stroke`:d.d.fault?'Tripped':d.d.enabled?'Standby':'Locked out'],['hk-c2',`Residual ${f1(d.d.res)} ppm (target ${DOSE_PPM})`]],
+      speed:d=>({hk0:d.d.running?18+4*d.d.rate:0,hk1:flowSpeed(Math.min(1.2,d.d.cwFlow/5000))})};
+  }
+
   function pumpCenter(id){
     return `<rect class="hk-box" x="472" y="232" width="56" height="44" rx="3"/><text class="hk-title" x="500" y="260" text-anchor="middle">M</text><line x1="500" y1="276" x2="500" y2="290" stroke="var(--text)" stroke-width="3"/>
       <g transform="translate(500,330)"><circle r="40" class="hk-box"/><g data-rot="${id}"><path d="M0,-28L7,0L0,28L-7,0ZM-28,0L0,7L28,0L0,-7Z" fill="var(--muted)"/></g></g>
@@ -162,6 +207,7 @@
     if(!eq) return null;
     const a=S.find(assetId);
     if(a.kind==='plant'){
+      if(eq==='TDS-1') return doseSpec();
       const i=+eq.slice(-2)-1;
       if(eq.startsWith('CH-')) return chillerSpec(i);
       if(eq.startsWith('CT-')) return towerSpec(i);
@@ -183,6 +229,10 @@
     const act=(dome)=>{const ay=y+dir*22; return `<line x1="${x}" y1="${y}" x2="${x}" y2="${ay}" class="hk-l"/>`+(dome?`<path d="M${x-9},${ay}a9,9 0 0 ${dir<0?1:0} 18,0Z" class="hk-v"/>`:`<rect x="${x-8}" y="${dir<0?ay-10:ay}" width="16" height="10" class="hk-v"/><text class="hk-m" x="${x}" y="${dir<0?ay-2:ay+8}" text-anchor="middle">M</text>`)};
     switch(it.k){
       case 'hv': return bow()+lab;
+      case 'inj': { const ty=y+dir*44; return `<g class="eq hk-eq" data-eq="TDS-1" tabindex="0" role="button" aria-label="Open TDS-1 dosing hookup"><title>${esc(it.tag)} — TDS additive injection quill (from TDS-1)</title>
+        <path d="M${x},${ty}V${y+dir*9}" fill="none" stroke="var(--chem)" stroke-width="2.5" stroke-dasharray="6 3"/><path d="M${x-5},${y+dir*13}L${x},${y+dir*5}L${x+5},${y+dir*13}Z" fill="var(--chem)"/>
+        <circle cx="${x}" cy="${y}" r="5" fill="var(--chem)" stroke="var(--panel)" stroke-width="2"/>
+        <text class="hk-tag" x="${x-6}" y="${ty+(dir>0?6:4)}" text-anchor="end" style="fill:var(--chem)">TDS-1</text></g>`+lab; }
       case 'nrv': return `<path d="M${x-10},${y-8}L${x},${y}L${x-10},${y+8}Z" class="hk-v"/><path d="M${x+10},${y-8}L${x},${y}L${x+10},${y+8}Z" class="hk-v" style="fill:var(--text)"/>`+lab;
       case 'str': return `<rect x="${x-12}" y="${y-7}" width="24" height="14" class="hk-v"/><line x1="${x-12}" y1="${y}" x2="${x+12}" y2="${y}" class="hk-l" stroke-dasharray="2 2"/><path d="M${x-2},${y+o*7}L${x+8},${y+o*17}" class="hk-l"/><path d="M${x+4},${y+o*17}h9" class="hk-l" stroke-width="3"/><text class="hk-tag" x="${x}" y="${y+o*33+(o>0?4:0)}" text-anchor="middle">${esc(it.tag)}</text>`;
       case 'mov': return bow(` id="hk-${it._id}"`)+act(false)+lab;
@@ -234,6 +284,7 @@
   }
 
   UI.hook={spec,svg,update,
-    legend:'<span><b>HV</b> isolation valve</span><span><b>STR</b> strainer</span><span><b>NRV</b> check valve</span><span><b>MOV</b> motorised valve</span><span><b>CV / PICV</b> control valve</span><span><b>PT</b> pressure</span><span><b>TT</b> temperature</span><span><b>FT</b> flow</span><span><b>DPT</b> diff. pressure</span><span>Filled valve = closed · amber value = out of range</span>'};
+    legend:'<span><b>HV</b> isolation valve</span><span><b>STR</b> strainer</span><span><b>NRV</b> check valve</span><span><b>MOV</b> motorised valve</span><span><b>CV / PICV</b> control valve</span><span><b>PT</b> pressure</span><span><b>TT</b> temperature</span><span><b>FT</b> flow</span><span><b>DPT</b> diff. pressure</span><span><b>IQ</b> TDS additive injection</span><span><b>AT</b> analyser</span><span>Filled valve = closed · amber value = out of range</span>'};
   UI.hookSpeed={};
+  UI.dose=dose;
 })();

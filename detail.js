@@ -11,18 +11,19 @@
     if(e.maint) return ['warn','Maintenance'];
     if(e.enabled===false) return ['warn','Locked out'];
     if(e.id==='ETS-1') return ['ok','In service'];
+    if(e.id==='TDS-1') return e.running?['ok','Dosing']:['off','Standby'];
     return e.running?['ok','Running']:['off','Standby'];
   }
   const pillOf=e=>{const [s,l]=eqState(e);return `<span class="pill" style="--c:${COL[s]}">${l}</span>`};
 
   function getEq(id){
     const a=asset();
-    if(a.kind==='plant') return [...a.chillers,...a.towers,...a.chwp,...a.cwp,...a.dp].find(x=>x.id===id);
+    if(a.kind==='plant') return id==='TDS-1'?UI.dose():[...a.chillers,...a.towers,...a.chwp,...a.cwp,...a.dp].find(x=>x.id===id);
     if(id==='ETS-1') return a.ets; if(id==='ZONE') return a;
     return a.ahu.find(x=>x.id===id);
   }
-  const typeOf=id=>id.startsWith('CH-')?'chiller':id.startsWith('CT-')?'tower':id.startsWith('CHWP')?'chwp':id.startsWith('CWP')?'cwp':id.startsWith('DP')?'dp':id==='ETS-1'?'ets':id==='ZONE'?'zone':'ahu';
-  const TYPE_NAME={chiller:'Centrifugal water-cooled chiller · 3,000 TR',tower:'Induced-draft cooling tower · paired 1:1 with a chiller',chwp:'Primary chilled-water pump · VFD',cwp:'Condenser water pump · constant speed',dp:'Secondary chilled-water pump · VFD · to CBD loop',ets:'Energy transfer station · plate heat exchanger',ahu:'Air handling unit · VAV, CHW coil',zone:'Occupied zones & fan-coil units'};
+  const typeOf=id=>id.startsWith('CH-')?'chiller':id.startsWith('CT-')?'tower':id.startsWith('CHWP')?'chwp':id.startsWith('CWP')?'cwp':id.startsWith('DP')?'dp':id==='TDS-1'?'dose':id==='ETS-1'?'ets':id==='ZONE'?'zone':'ahu';
+  const TYPE_NAME={chiller:'Centrifugal water-cooled chiller · 3,000 TR',tower:'Induced-draft cooling tower · paired 1:1 with a chiller',chwp:'Primary chilled-water pump · VFD',cwp:'Condenser water pump · constant speed',dp:'Secondary chilled-water pump · VFD · to CBD loop',dose:'TDS additive dosing skid · tank + metering pump · injects into CW after the cooling towers, before the chillers',ets:'Energy transfer station · plate heat exchanger',ahu:'Air handling unit · VAV, CHW coil',zone:'Occupied zones & fan-coil units'};
 
   // ---------- SVG helpers
   const G=(id,inner)=>`<g class="eq" data-eq="${id}" tabindex="0" role="button" aria-label="Inspect ${id}">${inner}</g>`;
@@ -36,6 +37,9 @@
     let s='';
     const bayX=i=>50+(i+1)*100, fx=50; // i = 0..8 installed bays, fx = future bay
     const lab=(x,y,t)=>`<text class="s lbl" x="${x}" y="${y}" text-anchor="middle">${t}</text>`;
+    // TDS additive dosing: skid → dosing header → injection quill on each bay's CW line (after CT basin/header, before CWP + chiller)
+    const xe=bayX(8)+22, CHEM='var(--chem)';
+    s+=`<path class="pipe" d="M78,162H${xe}" stroke="${CHEM}" style="stroke-width:2.5"/><path class="flow" data-flow="dose" d="M78,162H${xe}" style="stroke-width:1.5"/>`;
     // condenser headers
     s+=pipe('M110,125H990',CWR,'cw')+pipe('M990,147H110',CWS,'cw');
     p.towers.forEach((c,j)=>{const x=bayX(j); s+=`<path class="pipe" d="M${x-14},104V125" stroke="${CWR}"/><path class="pipe" d="M${x+14},104V147" stroke="${CWS}"/>`;});
@@ -62,9 +66,15 @@
         <text id="q-v1-${c.id}" x="${bx+8}" y="286" font-size="11">—</text><text class="s" id="q-v2-${c.id}" x="${bx+8}" y="304" font-size="10.5">—</text><text class="s" id="q-v3-${c.id}" x="${bx+8}" y="322" font-size="10.5">—</text>`);
     });
     p.cwp.forEach((c,i)=>{s+=pump(c.id,bayX(i)+22,190,lab)});
+    p.chillers.forEach((c,i)=>{const x=bayX(i)+22, n=i+1;
+      s+=G('TDS-1',`<title>IQ-${n}11 — TDS additive injection into CW to CWP-0${n} / CH-0${n}</title>${i<8?`<path d="M${x+42},157l8,5l-8,5z" fill="${CHEM}"/>`:''}<circle cx="${x}" cy="162" r="4.5" fill="${CHEM}" stroke="var(--panel)" stroke-width="2"/><text x="${x+7}" y="158" font-size="9" style="fill:${CHEM};font-family:var(--mono)">IQ-${n}</text>`);});
+    s+=G('TDS-1',`<rect class="box" x="8" y="110" width="84" height="118" rx="3"/><text x="15" y="125" font-size="11">TDS-1</text><circle id="q-d-TDS-1" cx="84" cy="118" r="4" fill="var(--off)"/>
+      <rect x="16" y="134" width="26" height="54" rx="2" fill="var(--box-2)" stroke="var(--line-2)"/><rect id="q-lvl-TDS-1" x="17" y="160" width="24" height="27" fill="${CHEM}" opacity=".55"/>
+      <path d="M29,188V196H66V174" fill="none" stroke="${CHEM}" stroke-width="2"/><circle cx="66" cy="162" r="12" fill="var(--box-2)" stroke="var(--line-2)"/><g transform="translate(66,162)"><g data-rot="TDS-1"><path d="M0,-7L2.4,0L0,7L-2.4,0ZM-7,0L0,2.4L7,0L0,-2.4Z" fill="var(--muted)"/></g></g>
+      <text class="s" x="29" y="208" text-anchor="middle" font-size="9">TK-D1</text><text class="s" x="66" y="208" text-anchor="middle" font-size="9">DMP-1</text><text class="s" id="q-v1-TDS-1" x="50" y="222" text-anchor="middle" font-size="10">—</text>`);
     p.chwp.forEach((c,i)=>{s+=pump(c.id,bayX(i)+22,395,lab)});
     p.dp.forEach((c,k)=>{s+=pump(c.id,300+k*160,535,lab)});
-    return `<svg viewBox="0 0 1000 600" role="img" aria-label="CUC chiller plant schematic: 9 chiller bays and 1 future bay">${s}</svg>`;
+    return `<svg viewBox="0 0 1000 600" role="img" aria-label="CUC chiller plant schematic: 9 chiller bays, 1 future bay and the TDS-1 additive dosing skid">${s}</svg>`;
   }
 
   function towerSVG(t){
@@ -92,6 +102,7 @@
       case 'tower': return [['Fan speed',f0(e.fan),'%'],['Fan power',f1(e.kW),'kW'],['Approach',f1(p.approach),'K'],['Wet bulb',f1(S.site.weather.wb),'°C'],['CW to chillers',f1(p.cws),'°C'],['CW return',f1(p.cwr),'°C'],['Mode',e.fanOverride==null?'Auto':'Manual',''],['Towers running',`${p.ctRun} / ${p.towers.length}`,'']];
       case 'chwp': case 'cwp': return [['Speed',f1(e.hz),'Hz'],['Power',f0(e.kW),'kW'],['Flow',f0(e.flow),'l/s'],['Head',e.running?f1(e.head):'0','m']];
       case 'dp': return [['Speed',f1(e.hz),'Hz'],['Power',f0(e.kW),'kW'],['Flow',f0(e.flow),'l/s'],['Head',e.running?f1(e.head):'0','m'],['Remote ΔP',f2(p.remoteDP),'bar'],['Mode',e.speedOverride==null?'Auto':'Manual','']];
+      case 'dose': { const D=UI.dose; return [['Dosing rate',f1(e.rate),'L/h'],['Mode',e.rateOverride==null?'Auto · flow-paced':'Manual',''],['Pump stroke',f0(e.pct),'%'],['Additive residual',f1(e.res),`ppm · target ${D.target}`],['CW TDS',f0(e.tdsAfter),`ppm · limit ${f0(D.limit)}`],['CW conductivity',f0(e.cond),'µS/cm'],['Tank TK-D1',f0(e.level),`% of ${f0(D.tank)} L`],['Stock left',isFinite(e.days)?f0(e.days):'—','days'],['Make-up water',f0(e.makeup),'m³/h'],['Injection points','9','IQ-111 … IQ-911']]; }
       case 'ets': return [['Primary S / R',`${f1(e.priS)} / ${f1(e.priR)}`,'°C'],['Secondary S / R',`${f1(e.secS)} / ${f1(e.secR)}`,'°C'],['Control valve',f0(e.valve),'%'],['Primary flow',f0(e.flow),'l/s'],['HX approach',f1(e.secS-e.priS),'K'],['Heat transfer',f0(a.load),'TR']];
       case 'ahu': return [['Fan speed',f0(e.fan),'%'],['Fan power',f1(e.kW),'kW'],['Supply air',f1(e.sat),'°C'],['SAT setpoint',f1(a.satSP),'°C'],['CHW valve',f0(e.valve),'%'],['CO₂',f0(e.co2),'ppm'],['Humidity',e.running?f0(e.rh):'—','%RH'],['Filter ΔP',e.running?f0(e.filterPa):'—','Pa']];
       case 'zone': return [['Avg zone temp',f1(a.zoneT),'°C'],['Setpoint',f1(a.zoneSP),'°C'],['Comfort',f0(a.comfort),'%'],['Occupancy',f0(a.occ*100),'%'],['Cooling load',f0(a.load),'TR'],['Design load',f0(a.design),'TR']];
@@ -107,6 +118,7 @@
     if(type==='dp'){ctl=slider('ctl-dp','Speed override',30,50,0.5,e.speedOverride??+(e.hz||40).toFixed(1),'Hz');note='Pump power follows the cube of speed — compare Hz to kW.'}
     if(type==='ahu'){ctl=slider('ctl-sat',`${a.id} SAT setpoint`,11,16,0.1,a.satSP,'°C')+slider('ctl-fan','Fan speed override',20,100,1,e.fanOverride??Math.round(e.fan||60),'%');note='Warmer supply air saves chilled water but pushes zones toward their limit.'}
     if(type==='zone'){ctl=slider('ctl-zone','Zone cooling setpoint',21,27,0.5,a.zoneSP,'°C');note='Each degree of setpoint changes this tower’s load by roughly 7% of design.'}
+    if(type==='dose'){ctl=slider('ctl-dose','Dosing rate override',0,UI.dose.max,0.1,e.rateOverride??+e.auto.toFixed(1),'L/h');note='Simulation only — these controls change the dashboard model; no command is sent to the real dosing skid or plant. Additive is injected into the condenser water after the cooling-tower basins and before each CWP and chiller.'}
     if(type==='ets') note='Fouling cuts heat transfer: secondary supply rises and every AHU in the tower feels it.';
     const btns=[];
     if(type==='chiller'||type==='chwp'||type==='cwp'){
@@ -117,7 +129,7 @@
     }
     if(type!=='zone'&&type!=='ets') btns.push(`<button class="btn" id="btn-en">${e.enabled?'Lock out':'Enable'}</button>`);
     if(type!=='zone') btns.push(`<button class="btn ${e.fault?'pri':'bad'}" id="btn-flt">${e.fault?(type==='ets'?'Clean heat exchanger':'Reset fault'):(type==='ets'?'Simulate fouling':'Inject trip')}</button>`);
-    if(type==='tower'||type==='ahu'||type==='dp') btns.push(`<button class="btn" id="btn-auto">Return to auto</button>`);
+    if(type==='tower'||type==='ahu'||type==='dp'||type==='dose') btns.push(`<button class="btn" id="btn-auto">Return to auto</button>`);
     $('#insp').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:start"><div><h3>${id==='ZONE'?esc(a.name)+' zones':id}</h3><div class="sub">${TYPE_NAME[type]}</div></div><span id="eqPill">${pillOf(e)}</span></div>
       <div class="readings" id="readings"></div>
       <div class="ctl"><span class="label">Simulate</span>${ctl}${btns.length?`<div class="btns">${btns.join('')}</div>`:''}<div class="sub" style="margin:0">${note}</div></div>
@@ -129,9 +141,10 @@
     on('#ctl-sat','input',ev=>{a.satSP=+ev.target.value;out(ev.target);UI.tick()});
     on('#ctl-dp','input',ev=>{e.speedOverride=+ev.target.value;out(ev.target);UI.tick()});
     on('#ctl-fan','input',ev=>{e.fanOverride=+ev.target.value;out(ev.target);UI.tick()});
+    on('#ctl-dose','input',ev=>{e.rateOverride=+ev.target.value;out(ev.target);UI.tick()});
     on('#btn-en','click',()=>{e.enabled=!e.enabled;UI.tick();buildInspector()});
     on('#btn-flt','click',()=>{e.fault=!e.fault;UI.tick();buildInspector()});
-    on('#btn-auto','click',()=>{if(type==='dp')e.speedOverride=null;else e.fanOverride=null;UI.tick();buildInspector()});
+    on('#btn-auto','click',()=>{if(type==='dp')e.speedOverride=null;else if(type==='dose')e.rateOverride=null;else e.fanOverride=null;UI.tick();buildInspector()});
     $('#insp').querySelectorAll('[data-str]').forEach(b=>b.addEventListener('click',()=>{const ch=p.chillers[+b.dataset.i],k=b.dataset.str; ch[k]=(ch[k]||1)>1?1:6; UI.tick(); buildInspector();}));
     document.querySelectorAll('#detail .eq').forEach(g=>g.classList.toggle('sel',g.dataset.eq===id));
     updateInspector();
@@ -185,7 +198,7 @@
       UI.hookSpeed={};
       $('#schemH').innerHTML=`<span class="label">Live schematic — click any equipment to open its hookup</span>`;
       $('#schemFit').innerHTML=isP?plantSVG(a):towerSVG(a);
-      $('#schemLegend').innerHTML=`<span style="--c:var(--chw)"><i></i>Chilled water supply</span><span style="--c:var(--chwr)"><i></i>Chilled water return</span>${isP?'<span style="--c:var(--cws)"><i></i>Condenser water to chillers</span><span style="--c:var(--cw)"><i></i>Condenser water to towers</span>':'<span style="--c:var(--line-2)"><i></i>Supply air duct</span>'}`;
+      $('#schemLegend').innerHTML=`<span style="--c:var(--chw)"><i></i>Chilled water supply</span><span style="--c:var(--chwr)"><i></i>Chilled water return</span>${isP?'<span style="--c:var(--cws)"><i></i>Condenser water to chillers</span><span style="--c:var(--cw)"><i></i>Condenser water to towers</span><span style="--c:var(--chem)"><i></i>TDS additive dosing · ● injection point</span>':'<span style="--c:var(--line-2)"><i></i>Supply air duct</span>'}`;
       bindEq('#schemFit .eq',eq=>{UI.selEq=eq;UI.hookMode=!!UI.hook.spec(UI.selected,eq);renderSchem();buildInspector();});
     }
     document.querySelectorAll('#detail .eq').forEach(g=>g.classList.toggle('sel',g.dataset.eq===UI.selEq));
@@ -212,6 +225,8 @@
         const b=document.getElementById('q-b-'+c.id); if(b) b.setAttribute('width',(68*c.pct/100).toFixed(1));});
       a.towers.forEach(c=>{dot(c,c.id);setT('q-v1-'+c.id,c.running?`${f0(c.fan)}%`:eqState(c)[1])});
       [...a.chwp,...a.cwp,...a.dp].forEach(c=>dot(c,c.id));
+      const d=UI.dose(); dot(d,'TDS-1'); setT('q-v1-TDS-1',d.running?`${f1(d.rate)} L/h`:eqState(d)[1]);
+      const lv=document.getElementById('q-lvl-TDS-1'); if(lv){const h=52*d.level/100; lv.setAttribute('y',(187-h).toFixed(1)); lv.setAttribute('height',h.toFixed(1));}
     }else{
       a.ahu.forEach(x=>{dot(x,x.id);setT('q-v1-'+x.id,x.running?`SAT ${f1(x.sat)} °C · fan ${f0(x.fan)}%`:eqState(x)[1]);setT('q-v2-'+x.id,`CHW valve ${f0(x.valve)}% · CO₂ ${f0(x.co2)} ppm`)});
       const e=a.ets; dot(e,'ETS-1'); setT('q-v1-ETS-1',`Pri ${f1(e.priS)} → ${f1(e.priR)} °C`); setT('q-v2-ETS-1',`Sec ${f1(e.secS)} → ${f1(e.secR)} °C`); setT('q-v3-ETS-1',`Valve ${f0(e.valve)}%`);
@@ -237,7 +252,7 @@
           angles[id]=((angles[id]||0)+sp*dt)%360; }
         el.setAttribute('transform',`rotate(${angles[id].toFixed(1)})`);
       });
-      const speed={chw:isP?(a.run?25+45*a.part:0):20+50*a.lf, cw:isP?(a.run?25+45*a.part:0):0, dist:isP?(a.dpRun?20+60*a.demand/27000:0):0, sec:isP?0:(a.ets.fault?8:20+50*a.lf), air:isP?0:30+0.6*(a.ahu.reduce((s,x)=>s+x.fan,0)/a.ahus)};
+      const speed={chw:isP?(a.run?25+45*a.part:0):20+50*a.lf, cw:isP?(a.run?25+45*a.part:0):0, dist:isP?(a.dpRun?20+60*a.demand/27000:0):0, sec:isP?0:(a.ets.fault?8:20+50*a.lf), dose:isP&&a.dose&&a.dose.running?14+4*a.dose.rate:0, air:isP?0:30+0.6*(a.ahu.reduce((s,x)=>s+x.fan,0)/a.ahus)};
       document.querySelectorAll('#detail [data-flow]').forEach((el,i)=>{
         const k=el.dataset.flow, v=(k in (UI.hookSpeed||{}))?UI.hookSpeed[k]:(speed[k]||0); offs[i]=((offs[i]||0)-v*dt)%200; el.style.strokeDashoffset=offs[i];
       });
